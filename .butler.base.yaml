@@ -1,0 +1,24 @@
+# Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
+# SEL Confidential
+
+publish-branch: "main"
+
+tag-date-format: "060102"
+
+should-run-all: true
+
+should-lint: true
+should-test: true
+should-build: false
+should-publish: false
+should-package: false
+
+workspace-root: "/workspaces/butler"
+
+results-file-path: "./butler_results.json"
+
+critical-paths:
+  - .devcontainer/devcontainer.json
+  - .base.butler.yml
+  - .butler.ignore.yml
+  - code
