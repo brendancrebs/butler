@@ -4,6 +4,7 @@
 package internal
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -104,5 +105,12 @@ func run(cmd *cobra.Command, args []string) (err error) {
 	if err != nil {
 		return
 	}
+
+	publishResults(config)
 	return
+}
+
+func publishResults(bc *ButlerConfig) {
+	resultBytes, _ := json.Marshal("test")
+	_ = os.WriteFile(bc.ResultsFilePath, resultBytes, 0o600)
 }
