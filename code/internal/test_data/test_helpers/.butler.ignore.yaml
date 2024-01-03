@@ -1,0 +1,8 @@
+# Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
+# SEL Confidential
+
+allowed-paths:
+  good_path: true
+
+blocked-paths:
+  bad_path: true

@@ -1,0 +1,25 @@
+# Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
+# SEL Confidential
+
+allowed-paths:
+  test_repo: true
+
+blocked-paths:
+  ci/: true
+  specs: true
+  .devcontainer: true
+
+
+workspace-root: "/workspaces/butler"
+
+publish-branch: "main"
+
+tag-date-format: "060102"
+
+should-run-all: false
+
+should-lint: true
+should-test: true
+should-build: false
+should-publish: false
+should-package: false
