@@ -99,5 +99,10 @@ func run(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	_ = printConfig(config, cmd)
+
+	err = ButlerSetup(config, cmd)
+	if err != nil {
+		return
+	}
 	return
 }

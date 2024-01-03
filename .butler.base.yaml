@@ -19,6 +19,6 @@ results-file-path: "./butler_results.json"
 
 critical-paths:
   - .devcontainer/devcontainer.json
-  - .base.butler.yml
-  - .butler.ignore.yml
+  - .butler.base.yaml
+  - .butler.ignore.yaml
   - code
