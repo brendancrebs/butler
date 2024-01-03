@@ -1,0 +1,207 @@
+{
+    "name": "butler",
+    "image": "hop-docker-dev.artifactory.metro.ad.selinc.com/sel-proxy-ubuntu:jammy-20230126",
+    "containerUser": "vscode",
+    "postCreateCommand": ".devcontainer/scripts/postCreateCommand.sh",
+    "init": true,
+    "runArgs": ["--network=host"],
+    "containerEnv": {
+      "CGO_ENABLED": "0",
+      "GOPRIVATE": "bitbucket.metro.ad.selinc.com/*"
+    },
+    "features": {
+      "hop-docker-dev.artifactory.metro.ad.selinc.com/devcontainers/features/go:1.0.1": {
+        "version": "1.19.4",
+        "golangciLintVersion": "1.50.1",
+        "goDelveVersion": "1.20.2",
+        "goOutlineVersion": "1.0.0",
+        "goaVersion": "3.11.1",
+        "goImportsVersion": "0.9.3",
+        "goModifyTagsVersion": "1.16.0",
+        "goPKGSVersion": "2.1.2",
+        "goPlayVersion": "1.0.0",
+        "goPLSVersion": "0.12.2",
+        "goTestsVersion": "1.6.0",
+        "IMPLVersion": "1.2.0",
+        "goMockVersion": "1.6.0",
+        "protocGoGRPCVersion": "1.3.0",
+        "protoGoVersion": "1.30.0"
+      },
+      "hop-docker-dev.artifactory.metro.ad.selinc.com/devcontainers/features/node:1.0.0": {
+        "version": "18.16.0",
+        "pnpmVersion": "8.6.2",
+        "aliasPnpm": true
+      },
+      "docker.sel.inc/devcontainers/features/common-utils:2": {
+        "username": "vscode"
+      },
+      "docker.sel.inc/devcontainers/features/docker-outside-of-docker:1": {}
+    },
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "davidanson.vscode-markdownlint",
+          "esbenp.prettier-vscode",
+          "eamodio.gitlens",
+          "Gruntfuggly.todo-tree",
+          "huntertran.auto-markdown-toc",
+          "psioniq.psi-header",
+          "redhat.vscode-yaml",
+          "stkb.rewrap",
+          "streetsidesoftware.code-spell-checker",
+          "yzhang.markdown-all-in-one"
+        ],
+        "settings": {
+          "go.lintOnSave": "workspace",
+          "go.lintTool": "golangci-lint",
+          "go.lintFlags": [],
+          "go.vetOnSave": "off",
+          "go.vetFlags": [],
+          "go.formatTool": "default",
+          "go.coverOnSingleTest": true,
+          "go.coverOnTestPackage": true,
+          "go.coverOnSingleTestFile": true,
+          "go.coverShowCounts": false,
+          "go.coverageOptions": "showBothCoveredAndUncoveredCode",
+          "go.coverMode": "default",
+          "go.testTimeout": "600s",
+          "go.testFlags": ["-v", "-tags=testonly"],
+          "go.testExplorer.packageDisplayMode": "nested",
+          "go.toolsManagement.autoUpdate": false,
+          "go.toolsManagement.checkForUpdates": "off",
+          "go.survey.prompt": false,
+          "go.useLanguageServer": true,
+          "gopls": {
+            "verboseOutput": true,
+            "build.buildFlags": ["-tags=manual,testonly"],
+            "ui.diagnostic.staticcheck": false,
+            "ui.semanticTokens": true,
+            "formatting.gofumpt": true,
+            "formatting.local": "selinc.com,bitbucket.metro.ad.selinc.com",
+            "ui.codelenses": {
+              "generate": false,
+              "run_govulncheck": true,
+              "upgrade_dependency": false
+            }
+          },
+          "[go]": {
+            "editor.autoIndent": "advanced",
+            "editor.snippetSuggestions": "bottom",
+            "editor.insertSpaces": false,
+            "editor.formatOnSave": true,
+            "editor.suggest.snippetsPreventQuickSuggestions": false,
+            "editor.codeActionsOnSave": {
+              "source.organizeImports": true
+            }
+          },
+          "[markdown]": {
+            "editor.tabSize": 2,
+            "editor.defaultFormatter": "esbenp.prettier-vscode",
+            "editor.insertSpaces": true,
+            "rewrap.autoWrap.enabled": true,
+            "rewrap.wrappingColumn": 120,
+            "editor.codeActionsOnSave": {
+              "source.fixAll.markdownlint": true
+            },
+            "editor.rulers": [120]
+          },
+  
+          "todo-tree.general.tags": ["FIXME", "TODO", "NOTE", "BUG", "FIX"],
+          "todo-tree.highlights.defaultHighlight": {
+            "type": "text",
+            "opacity": 50
+          },
+          "todo-tree.highlights.customHighlight": {
+            "TODO": {
+              "foreground": "#f7a54b",
+              "rulerColour": "#f7a54b"
+            },
+            "FIXME": {
+              "foreground": "#ff6652",
+              "rulerColour": "#ff6652"
+            },
+            "NOTE": {
+              "foreground": "#3da1ff",
+              "rulerColour": "#3da1ff"
+            }
+          },
+          "todo-tree.general.tagGroups": {
+            "FIXME": ["FIXME", "FIX", "BUG"]
+          },
+          "todo-tree.highlights.highlightDelay": 250,
+          "todo-tree.tree.scanMode": "open files",
+          "todo-tree.filtering.excludeGlobs": [".vscode"],
+  
+          "psi-header.config": {
+            "company": "Schweitzer Engineering Laboratories, Inc."
+          },
+          "psi-header.lang-config": [
+            {
+              "language": "*",
+              "begin": "",
+              "end": "",
+              "prefix": "// "
+            },
+            {
+              "language": "markdown",
+              "begin": "<!--",
+              "end": "-->",
+              "prefix": ""
+            },
+            {
+              "language": "yaml",
+              "begin": "",
+              "end": "",
+              "prefix": "# "
+            }
+          ],
+          "psi-header.changes-tracking": {
+            "autoHeader": "autoSave",
+            "exclude": ["json"],
+            "excludeGlob": [
+              "**/.git/**",
+              "/workspaces/cumulus/deployments/cli/config"
+            ]
+          },
+          "psi-header.variables": [["projectCreationYear", "2023"]],
+          "psi-header.templates": [
+            {
+              "language": "*",
+              "template": [
+                "Copyright (c) <<yeartoyear(<<projectCreationYear>>,'now')>> <<company>>",
+                "SEL Confidential"
+              ]
+            }
+          ],
+          "markdown.extension.toc.updateOnSave": false,
+          "markdown-toc.insertAnchor": true,
+          "markdown-toc.withLinks": true,
+          "markdown-toc.anchorMode": "github.com",
+          "markdown-toc.depthFrom": 2,
+          "markdownlint.config": {
+            "MD013": false,
+            "MD022": {
+              "lines_below": 0
+            },
+            "MD030": false,
+            "MD033": true,
+            "MD024": {
+              "siblings_only": true
+            }
+          },
+          "files.eol": "\n",
+          "editor.renderWhitespace": "all",
+          "editor.formatOnSave": true,
+          "editor.rulers": [100],
+          "terminal.integrated.profiles.linux": {
+            "zsh": {
+              "path": "zsh",
+              "args": ["-l"]
+            }
+          },
+          "terminal.integrated.defaultProfile.linux": "zsh"
+        }
+      }
+    }
+  }
+  

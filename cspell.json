@@ -1,0 +1,55 @@
+// Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
+// SEL Confidential
+{
+  "version": "0.2",
+  "language": "en",
+  "languageSettings": [
+    {
+      "languageId": "golang",
+      "dictionaries": ["golang"],
+      // Turn off compound words, because it is only checking strings.
+      "allowCompoundWords": true,
+      // Only check comments and strings
+      "includeRegExpList": ["CStyleComment", "string"],
+      // Exclude imports, because they are also strings.
+      "ignoreRegExpList": [
+        // ignore mulltiline imports
+        "import\\s*\\((.|[\r\n])*?\\)",
+        // ignore single line imports
+        "import\\s*.*\".*?\"",
+        // ignore go generate directive
+        "//\\s*go:generate.*",
+        // ignore nolint directive
+        "//\\s*nolint:.*"
+      ]
+    }
+  ],
+  "words": [
+    "CNAB",
+    "Crebs",
+    "NCPU",
+    "VITEST",
+    "blueapp",
+    "butlerignore",
+    "devcontainer",
+    "dockerfile",
+    "dockerfiles",
+    "fuzztasks",
+    "golangci",
+    "goconvey",
+    "lintcli",
+    "nolint",
+    "unmarshal",
+    "unmarshaling",
+    "unparam",
+    "templating",
+    "selinc"
+  ],
+  "ignorePaths": [
+    ".vscode",
+    "cspell.json",
+    ".devcontainer/*.json",
+    ".devcontainer/environments/*",
+    ".devcontainer/environments/*"
+  ]
+}
