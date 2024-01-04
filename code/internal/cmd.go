@@ -6,6 +6,7 @@ package internal
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 )
@@ -33,9 +34,11 @@ func getCommand() *cobra.Command {
 }
 
 var (
-	cmd        = getCommand()
-	flags      = &ButlerConfig{}
-	configPath string
+	cmd              = getCommand()
+	flags            = &ButlerConfig{}
+	execOutputStub   = func(cmd *exec.Cmd) ([]byte, error) { return cmd.Output() }
+	execLookPathStub = func(executable string) (string, error) { return exec.LookPath(executable) }
+	configPath       string
 )
 
 // Execute is the entrypoint into the Butler

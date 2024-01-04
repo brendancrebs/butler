@@ -7,7 +7,9 @@ package internal
 
 import (
 	"bytes"
+	"errors"
 	"os"
+	"os/exec"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -22,6 +24,20 @@ var currBranch = func() string {
 
 	return b
 }()
+
+func replaceStubs() (undo func()) {
+	originalExecOutputStub := (*exec.Cmd).Output
+	execOutputStub = func(cmd *exec.Cmd) ([]byte, error) { return cmd.Output() }
+
+	originalExecLookPathStub := exec.LookPath
+	execLookPathStub = func(executable string) (string, error) { return exec.LookPath(executable) }
+
+	return func() {
+		execOutputStub = originalExecOutputStub
+		execLookPathStub = originalExecLookPathStub
+		_ = os.Remove("butler_results.json")
+	}
+}
 
 func Test_RunWithErr(t *testing.T) {
 	os.Setenv("BUTLER_SHOULD_RUN_ALL", "true")
@@ -63,6 +79,35 @@ func Test_RunWithErr(t *testing.T) {
 		So(stderr.String(), ShouldContainSubstring, "Error: Butler ignore parse error: yaml: unmarshal errors")
 	})
 
-	Convey("Butler setup fails", t, func() {
+	Convey("Butler setup fails when git fails", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) { return nil, errors.New("error getting git branch") }
+		Execute()
+
+		_, err := os.Stat("./butler_results.json")
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldContainSubstring, "error getting git branch")
+	})
+
+	Convey("Butler setup fails when git not installed", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		execLookPathStub = func(executable string) (string, error) { return "", errors.New("git executable not found") }
+		Execute()
+
+		_, err := os.Stat("./butler_results.json")
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldContainSubstring, "git executable not found")
 	})
 }

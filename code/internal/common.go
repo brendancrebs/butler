@@ -5,7 +5,6 @@ package internal
 
 import (
 	"os"
-	"strings"
 )
 
 func getEnvOrDefault(name, defaultValue string) string {
@@ -15,14 +14,6 @@ func getEnvOrDefault(name, defaultValue string) string {
 	return defaultValue
 }
 
-func splitCommand(cmd string) []string {
-	commandParts := []string{}
-	splitCmd := strings.Fields(cmd)
-	commandParts = append(commandParts, splitCmd...)
-	return commandParts
-}
-
-// merge two maps
 func mergeMaps(ignoreMap, configMap map[string]bool) map[string]bool {
 	result := make(map[string]bool)
 

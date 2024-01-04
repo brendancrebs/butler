@@ -57,10 +57,17 @@ func shouldBuildAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 // getCurrentBranch is returns the whitespace trimmed result of `git branch --show-current`
 // which should be the branch, or an error.
 func getCurrentBranch() (branch string, err error) {
-	cmd := "git branch --show-current"
-	commandParts := splitCommand(cmd)
+	path, err := execLookPathStub("git")
+	if err != nil {
+		return
+	}
 
-	execCmd, err := exec.Command(commandParts[0], commandParts[1:]...).Output()
+	cmd := &exec.Cmd{
+		Path: path,
+		Args: []string{path, "branch", "--show-current"},
+	}
+
+	execCmd, err := execOutputStub(cmd)
 	if err != nil {
 		return
 	}
@@ -125,7 +132,7 @@ func allowedAndNotBlocked(path string, allowed, blocked map[string]bool) bool {
 // changed.
 func getDirtyPaths(branch string) ([]string, error) {
 	branch = strings.TrimSpace(branch)
-	path, err := exec.LookPath("git")
+	path, err := execLookPathStub("git")
 	if err != nil {
 		return nil, err
 	}

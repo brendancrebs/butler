@@ -4,6 +4,7 @@
 package internal
 
 import (
+	"errors"
 	"path"
 	"testing"
 
@@ -85,4 +86,17 @@ func Test_criticalFolderChanged(t *testing.T) {
 			So(criticalFolderChanged(test.dirtyFolders, test.criticalFolders), ShouldResemble, test.expected)
 		})
 	}
+}
+
+func Test_getCurrentBranchCoverage(t *testing.T) {
+	Convey("fails when git executable not found", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		execLookPathStub = func(executable string) (string, error) { return "", errors.New("git executable not found") }
+		branch, err := getCurrentBranch()
+
+		So(branch, ShouldEqual, "")
+		So(err.Error(), ShouldContainSubstring, "git executable not found")
+	})
 }
