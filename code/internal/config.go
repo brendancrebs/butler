@@ -37,23 +37,21 @@ type ButlerPaths struct {
 
 // ButlerConfig specifies the Butler configuration options.
 type ButlerConfig struct {
-	Allowed          map[string]bool `yaml:"allowed-paths,omitempty"`
-	Blocked          map[string]bool `yaml:"blocked-paths,omitempty"`
-	Registry         string          `yaml:"Registry,omitempty"`
-	PublishBranch    string          `yaml:"publish-branch,omitempty"`
-	BuildID          string          `yaml:"build-id,omitempty"`
-	DockerfileSuffix string          `yaml:"dockerfile-suffix,omitempty"`
-	TagDateFormat    string          `yaml:"tag-date-format,omitempty"`
-	ResultsFilePath  string          `yaml:"results-file-path,omitempty"`
-	ReleaseVersion   string          `yaml:"release-version,omitempty"`
-	WorkspaceRoot    string          `yaml:"workspace-root,omitempty"`
-	Subscribers      []string        `yaml:"result-subscribers,omitempty"`
-	CriticalPaths    []string        `yaml:"critical-paths,omitempty"`
-	ShouldRunAll     bool            `yaml:"should-run-all,omitempty"`
-	ShouldLint       bool            `yaml:"should-lint,omitempty"`
-	ShouldTest       bool            `yaml:"should-test,omitempty"`
-	ShouldBuild      bool            `yaml:"should-build,omitempty"`
-	ShouldPublish    bool            `yaml:"should-publish,omitempty"`
+	Allowed         map[string]bool `yaml:"allowed-paths,omitempty"`
+	Blocked         map[string]bool `yaml:"blocked-paths,omitempty"`
+	Registry        string          `yaml:"Registry,omitempty"`
+	PublishBranch   string          `yaml:"publish-branch,omitempty"`
+	BuildID         string          `yaml:"build-id,omitempty"`
+	TagDateFormat   string          `yaml:"tag-date-format,omitempty"`
+	ResultsFilePath string          `yaml:"results-file-path,omitempty"`
+	ReleaseVersion  string          `yaml:"release-version,omitempty"`
+	WorkspaceRoot   string          `yaml:"workspace-root,omitempty"`
+	CriticalPaths   []string        `yaml:"critical-paths,omitempty"`
+	ShouldRunAll    bool            `yaml:"should-run-all,omitempty"`
+	ShouldLint      bool            `yaml:"should-lint,omitempty"`
+	ShouldTest      bool            `yaml:"should-test,omitempty"`
+	ShouldBuild     bool            `yaml:"should-build,omitempty"`
+	ShouldPublish   bool            `yaml:"should-publish,omitempty"`
 }
 
 func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConfig) {
@@ -61,8 +59,6 @@ func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConf
 		cmd.Flags().Changed("publish-branch"))
 	bc.BuildID = useFlagIfChangedString(bc.BuildID, flags.BuildID,
 		cmd.Flags().Changed("build-id"))
-	bc.DockerfileSuffix = useFlagIfChangedString(bc.DockerfileSuffix, flags.DockerfileSuffix,
-		cmd.Flags().Changed("dockerfile-suffix"))
 	bc.TagDateFormat = useFlagIfChangedString(bc.TagDateFormat, flags.TagDateFormat,
 		cmd.Flags().Changed("date-format"))
 	bc.ReleaseVersion = useFlagIfChangedString(bc.ReleaseVersion, flags.ReleaseVersion,
@@ -89,7 +85,9 @@ func loadConfig() (config *ButlerConfig, err error) {
 		ResultsFilePath: "./butler_results.json",
 	}
 
-	fmt.Printf("ConfigPath: %v\n", configPath)
+	if _, err := os.Stat(configPath); err != nil {
+		return nil, err
+	}
 	content, _ := os.ReadFile(configPath)
 	err = yaml.Unmarshal(content, config)
 	if err != nil {

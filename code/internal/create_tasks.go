@@ -44,10 +44,7 @@ func shouldRunAll(bc *ButlerConfig) (allPaths []string, err error) {
 
 	rebuildAll := strings.EqualFold(helpers.GetEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
 	rebuildAll = rebuildAll || bc.ShouldRunAll
-	allPaths, err = getFilePaths([]string{bc.WorkspaceRoot}, true, bc.Allowed, bc.Blocked)
-	if err != nil {
-		return nil, err
-	}
+	allPaths = getFilePaths([]string{bc.WorkspaceRoot}, true, bc.Allowed, bc.Blocked)
 
 	allDirtyPaths, err := repoFilenamesDiff(bc.PublishBranch)
 	if err != nil {
@@ -72,7 +69,7 @@ func getCurrentBranch() (branch string, err error) {
 
 	execCmd, err := exec.Command(commandParts[0], commandParts[1:]...).Output()
 	if err != nil {
-		fmt.Printf("Error executing '%s': %v\n", cmd, err)
+		err = fmt.Errorf("Error executing '%s': %v\n", cmd, err)
 	}
 
 	branch = helpers.GetEnvOrDefault(envBranch, strings.TrimSpace(string(execCmd)))
@@ -81,22 +78,20 @@ func getCurrentBranch() (branch string, err error) {
 
 // getFilePaths takes a set of directories and returns all of the filepaths from them.
 // If `shouldRecurse`, then it calls recurseFilepaths for each folder.
-func getFilePaths(dirs []string, shouldRecurse bool, allowed, blocked map[string]bool) ([]string, error) {
+func getFilePaths(dirs []string, shouldRecurse bool, allowed, blocked map[string]bool) []string {
 	paths := make([]string, 0)
 
-	var err error
 	for _, base := range dirs {
-		paths, err = recurseFilepaths(base, paths, shouldRecurse, allowed, blocked)
+		paths = recurseFilepaths(base, paths, shouldRecurse, allowed, blocked)
 	}
 
 	sort.Strings(paths)
-	return paths, err
+	return paths
 }
 
 // recurseFilepaths reads the directory at `path` and either appends filepaths or appends the result
 // of a further call to recurseFilepaths.
-func recurseFilepaths(path string, paths []string, shouldRecurse bool, allowed, blocked map[string]bool) ([]string, error) {
-	var err error
+func recurseFilepaths(path string, paths []string, shouldRecurse bool, allowed, blocked map[string]bool) []string {
 	fileInfos, _ := os.ReadDir(path)
 	for _, fi := range fileInfos {
 		path := filepath.Join(path, fi.Name())
@@ -109,10 +104,10 @@ func recurseFilepaths(path string, paths []string, shouldRecurse bool, allowed, 
 		if !fi.IsDir() {
 			paths = append(paths, path)
 		} else if shouldRecurse {
-			paths, err = recurseFilepaths(path, paths, shouldRecurse, allowed, blocked)
+			paths = recurseFilepaths(path, paths, shouldRecurse, allowed, blocked)
 		}
 	}
-	return paths, err
+	return paths
 }
 
 func allowedAndNotBlocked(path string, allowed, blocked map[string]bool) bool {

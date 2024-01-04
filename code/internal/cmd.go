@@ -5,7 +5,6 @@ package internal
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -70,9 +69,6 @@ func parseFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&flags.BuildID, "build-id", buildIDEnv,
 		"Build-id value in the release tag.  Publish only when not equal to \"\".")
 
-	cmd.PersistentFlags().StringVar(&flags.DockerfileSuffix, "dockerfile-suffix", ".x.Dockerfile",
-		"The suffix on Dockerfiles that are intended to build and publish.")
-
 	cmd.PersistentFlags().StringVar(&flags.TagDateFormat, "date-format", "060102",
 		"Format of the date field in the release tag.")
 	cmd.PersistentFlags().StringVar(&flags.ReleaseVersion, "release-version", "",
@@ -82,10 +78,9 @@ func parseFlags(cmd *cobra.Command) {
 }
 
 func run(cmd *cobra.Command, args []string) (err error) {
-	fmt.Printf("Hello world\n")
 	config, err := loadConfig()
 	if err != nil {
-		fmt.Printf("Error loading config: %s", err)
+		return
 	}
 	config.applyFlagsToConfig(cmd, flags)
 
@@ -101,12 +96,13 @@ func run(cmd *cobra.Command, args []string) (err error) {
 
 	_ = printConfig(config, cmd)
 
+	defer publishResults(config)
+
 	err = ButlerSetup(config, cmd)
 	if err != nil {
 		return
 	}
 
-	publishResults(config)
 	return
 }
 
