@@ -8,8 +8,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-
-	"selinc.com/butler/code/helpers"
 )
 
 const (
@@ -90,8 +88,8 @@ func run(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	if ignorePaths != nil {
-		config.Allowed = helpers.MergeMaps(ignorePaths.Allowed, config.Allowed)
-		config.Blocked = helpers.MergeMaps(ignorePaths.Blocked, config.Blocked)
+		config.Allowed = mergeMaps(ignorePaths.Allowed, config.Allowed)
+		config.Blocked = mergeMaps(ignorePaths.Blocked, config.Blocked)
 	}
 
 	_ = printConfig(config, cmd)
@@ -106,6 +104,7 @@ func run(cmd *cobra.Command, args []string) (err error) {
 	return
 }
 
+// For now this just prints the config to Butler results since no tasks are being created.
 func publishResults(bc *ButlerConfig) {
 	resultBytes, _ := json.MarshalIndent(bc, "", "\t")
 	_ = os.WriteFile(bc.ResultsFilePath, resultBytes, 0o600)

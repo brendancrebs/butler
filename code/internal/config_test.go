@@ -19,12 +19,12 @@ func Test_loadConfig(t *testing.T) {
 
 		expected := &ButlerConfig{
 			Allowed: map[string]bool{
-				"test_repo/": true,
+				"test_repo": true,
 			},
 			Blocked: map[string]bool{
-				"ci/":            true,
-				"specs/":         true,
-				".devcontainer/": true,
+				"ci/":           true,
+				"specs":         true,
+				".devcontainer": true,
 			},
 			WorkspaceRoot:   "/workspaces/butler",
 			ShouldLint:      true,
@@ -63,10 +63,10 @@ func Test_loadButlerIgnore(t *testing.T) {
 		}
 		expected := &ButlerPaths{
 			Allowed: map[string]bool{
-				"good_path/": true,
+				"good_path": true,
 			},
 			Blocked: map[string]bool{
-				"bad_path/": true,
+				"bad_path": true,
 			},
 		}
 		paths, err := loadButlerIgnore(testConfig)

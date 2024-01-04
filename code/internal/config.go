@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"selinc.com/butler/code/helpers"
-
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -24,9 +22,9 @@ const (
 )
 
 var (
-	shouldPublishEnv, _ = strconv.ParseBool(helpers.GetEnvOrDefault(envPublish, "false"))
-	buildIDEnv          = strings.TrimSpace(helpers.GetEnvOrDefault(envBuildID, ""))
-	branchNameEnv       = strings.TrimSpace(helpers.GetEnvOrDefault(envBranch, ""))
+	shouldPublishEnv, _ = strconv.ParseBool(getEnvOrDefault(envPublish, "false"))
+	buildIDEnv          = strings.TrimSpace(getEnvOrDefault(envBuildID, ""))
+	branchNameEnv       = strings.TrimSpace(getEnvOrDefault(envBranch, ""))
 )
 
 // ButlerPaths specifies the allowed and blocked paths within the .butler.ignore.yaml.

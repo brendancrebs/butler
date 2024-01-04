@@ -17,10 +17,16 @@ application is being written for. More directed documentation can be found here 
 is also a special directory for progress reports for the project class. The neither the `spec` nor `sprints` directory
 is required viewing for understanding Butler.
 
+### Running Butler
+
+To run butler, execute `butler` in the terminal. Since the current code is the shell for Butler, this will just print
+out the Butler config and the list of paths that Butler found. Walking the repo for paths is where the current
+implementation of Butler ends.
+
 ### Implementation steps
 
-At a high level, Butler simply runs commands to lint, test, build, and publish parts of a repository. Here is the end
-planned implementation to accomplish this:
+At a high level, Butler simply runs commands to lint, test, build, and publish parts of a repository. Here is the
+implementation to accomplish this:
 
 1. First, Butler will read from a user defined config called `.butler.base.yaml` which will be defined at the root of
    the repo. This will contain most of the information that will influence Butler's behavior. Butler is also a cli tool,

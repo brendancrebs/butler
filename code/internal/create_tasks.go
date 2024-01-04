@@ -14,8 +14,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-
-	"selinc.com/butler/code/helpers"
 )
 
 func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
@@ -42,7 +40,7 @@ func shouldBuildAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 		return
 	}
 
-	rebuildAll := strings.EqualFold(helpers.GetEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
+	rebuildAll := strings.EqualFold(getEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
 	rebuildAll = rebuildAll || bc.ShouldRunAll
 	bc.ShouldPublish = currentBranch == bc.PublishBranch
 
@@ -60,14 +58,14 @@ func shouldBuildAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 // which should be the branch, or an error.
 func getCurrentBranch() (branch string, err error) {
 	cmd := "git branch --show-current"
-	commandParts := helpers.SplitCommand(cmd)
+	commandParts := splitCommand(cmd)
 
 	execCmd, err := exec.Command(commandParts[0], commandParts[1:]...).Output()
 	if err != nil {
-		err = fmt.Errorf("Error executing '%s': %v\n", cmd, err)
+		return
 	}
 
-	branch = helpers.GetEnvOrDefault(envBranch, strings.TrimSpace(string(execCmd)))
+	branch = getEnvOrDefault(envBranch, strings.TrimSpace(string(execCmd)))
 	return
 }
 
@@ -128,20 +126,19 @@ func allowedAndNotBlocked(path string, allowed, blocked map[string]bool) bool {
 func getDirtyPaths(branch string) ([]string, error) {
 	branch = strings.TrimSpace(branch)
 	path, err := exec.LookPath("git")
+	if err != nil {
+		return nil, err
+	}
 
-	var output []byte
-	err = helpers.IfErrNil(err, func() (innerErr error) {
-		cmd := &exec.Cmd{
-			Path: path,
-			Args: []string{path, "diff", "--name-only"},
-		}
-		if branch != "" {
-			cmd.Args = append(cmd.Args, branch)
-		}
+	cmd := &exec.Cmd{
+		Path: path,
+		Args: []string{path, "diff", "--name-only"},
+	}
+	if branch != "" {
+		cmd.Args = append(cmd.Args, branch)
+	}
 
-		output, innerErr = cmd.Output()
-		return
-	})
+	output, err := cmd.Output()
 
 	return getLines(output, []byte{'\n'}), err
 }

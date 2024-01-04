@@ -24,11 +24,12 @@ var currBranch = func() string {
 }()
 
 func Test_RunWithErr(t *testing.T) {
+	os.Setenv("BUTLER_SHOULD_RUN_ALL", "true")
 	Convey("Just running the command for outer coverage of Execute", t, func() {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml", "--all"})
 		Execute()
 
 		// Success determined by existence of the results json file.
