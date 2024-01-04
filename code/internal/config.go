@@ -94,9 +94,6 @@ func loadConfig() (config *ButlerConfig, err error) {
 		return nil, fmt.Errorf("Configuration parse error: %w", err)
 	}
 
-	config.Allowed = appendSep(config.Allowed)
-	config.Blocked = appendSep(config.Blocked)
-
 	return
 }
 
@@ -112,8 +109,6 @@ func loadButlerIgnore(bc *ButlerConfig) (paths *ButlerPaths, err error) {
 		return nil, fmt.Errorf("Butler ignore parse error: %w", err)
 	}
 
-	paths.Allowed = appendSep(paths.Allowed)
-	paths.Blocked = appendSep(paths.Blocked)
 	return
 }
 
@@ -148,19 +143,4 @@ func useFlagIfChangedString(a, b string, c bool) string {
 		return b
 	}
 	return a
-}
-
-func appendSep(in map[string]bool) map[string]bool {
-	out := make(map[string]bool)
-
-	for key := range in {
-		if strings.HasSuffix(key, "/") {
-			out[key] = true
-			continue
-		}
-
-		out[key+"/"] = true
-	}
-
-	return out
 }

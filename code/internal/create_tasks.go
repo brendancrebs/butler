@@ -19,37 +19,32 @@ import (
 )
 
 func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
-	allPaths, err := shouldRunAll(bc)
+	allPaths := getFilePaths([]string{bc.WorkspaceRoot}, true, bc.Allowed, bc.Blocked)
+	allDirtyPaths, err := getDirtyPaths(bc.PublishBranch)
 	if err != nil {
-		return
+		return err
+	}
+
+	if err = shouldBuildAll(bc, allDirtyPaths); err != nil {
+		return err
 	}
 
 	fmt.Printf("allPaths: %v\n", allPaths)
 
-	// 1. run preliminary commands
-
-	// 2. create workspaces for each language
-
-	// 3. create tasks for each language
-
 	return
 }
 
-func shouldRunAll(bc *ButlerConfig) (allPaths []string, err error) {
+// Determines if Butler requires a full build.
+func shouldBuildAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 	// get current git branch name
 	currentBranch, err := getCurrentBranch()
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	rebuildAll := strings.EqualFold(helpers.GetEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
 	rebuildAll = rebuildAll || bc.ShouldRunAll
-	allPaths = getFilePaths([]string{bc.WorkspaceRoot}, true, bc.Allowed, bc.Blocked)
-
-	allDirtyPaths, err := repoFilenamesDiff(bc.PublishBranch)
-	if err != nil {
-		return nil, err
-	}
+	bc.ShouldPublish = currentBranch == bc.PublishBranch
 
 	criticalFiles, criticalFolders, err := separateCriticalFiles(bc.WorkspaceRoot, bc.CriticalPaths)
 	rebuildAll = rebuildAll || criticalFileChanged(allDirtyPaths, criticalFiles)
@@ -95,9 +90,6 @@ func recurseFilepaths(path string, paths []string, shouldRecurse bool, allowed, 
 	fileInfos, _ := os.ReadDir(path)
 	for _, fi := range fileInfos {
 		path := filepath.Join(path, fi.Name())
-		if fi.IsDir() {
-			path = path + "/"
-		}
 		if !allowedAndNotBlocked(path, allowed, blocked) {
 			continue
 		}
@@ -130,10 +122,10 @@ func allowedAndNotBlocked(path string, allowed, blocked map[string]bool) bool {
 	return isAllowed && !isBlocked
 }
 
-// repoFilenamesDiff calls 'git diff --name-only {branch}' if branch is not blank, or
+// getDirtyPaths calls 'git diff --name-only {branch}' if branch is not blank, or
 // 'git diff --name-only' without a branch.  It returns a list of file names that
 // changed.
-func repoFilenamesDiff(branch string) ([]string, error) {
+func getDirtyPaths(branch string) ([]string, error) {
 	branch = strings.TrimSpace(branch)
 	path, err := exec.LookPath("git")
 

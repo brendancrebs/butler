@@ -10,11 +10,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func ExampleMain() {
-	os.Args = []string{"", "-h"}
-	main()
-}
-
 func Test_Main(t *testing.T) {
 	Convey("Run error cases for coverage", t, func() {
 		os.Args = []string{"", "-h"}

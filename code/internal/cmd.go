@@ -107,6 +107,6 @@ func run(cmd *cobra.Command, args []string) (err error) {
 }
 
 func publishResults(bc *ButlerConfig) {
-	resultBytes, _ := json.Marshal("test")
+	resultBytes, _ := json.MarshalIndent(bc, "", "\t")
 	_ = os.WriteFile(bc.ResultsFilePath, resultBytes, 0o600)
 }
