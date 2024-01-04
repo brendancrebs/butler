@@ -41,7 +41,6 @@ func shouldBuildAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 	}
 
 	rebuildAll := strings.EqualFold(getEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
-	rebuildAll = rebuildAll || bc.ShouldRunAll
 	bc.ShouldPublish = currentBranch == bc.PublishBranch
 
 	criticalFiles, criticalFolders, err := separateCriticalFiles(bc.WorkspaceRoot, bc.CriticalPaths)
