@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+// returns the value of the given environment variable if it has been set. Otherwise return the
+// default.
 func getEnvOrDefault(name, defaultValue string) string {
 	if v := os.Getenv(name); v != "" {
 		return v
@@ -14,6 +16,7 @@ func getEnvOrDefault(name, defaultValue string) string {
 	return defaultValue
 }
 
+// merges two maps into one.
 func mergeMaps(ignoreMap, configMap map[string]bool) map[string]bool {
 	result := make(map[string]bool)
 

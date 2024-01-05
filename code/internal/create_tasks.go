@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// This function will return a queue populated with tasks
 func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
 	allPaths := getFilePaths([]string{bc.WorkspaceRoot}, true, bc.Allowed, bc.Blocked)
 	allDirtyPaths, err := getDirtyPaths(bc.PublishBranch)
@@ -23,17 +24,27 @@ func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
 		return err
 	}
 
-	if err = shouldBuildAll(bc, allDirtyPaths); err != nil {
+	if err = shouldRunAll(bc, allDirtyPaths); err != nil {
 		return err
 	}
 
 	fmt.Printf("allPaths: %v\n", allPaths)
 
+	// Next steps:
+
+	// 1. run preliminary commands
+
+	// 2. create workspace objects for each language
+
+	// 3. create tasks for each language
+
+	// 4. Return the populated task queue
+
 	return
 }
 
 // Determines if Butler requires a full build.
-func shouldBuildAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
+func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 	// get current git branch name
 	currentBranch, err := getCurrentBranch()
 	if err != nil {
@@ -43,7 +54,7 @@ func shouldBuildAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 	rebuildAll := strings.EqualFold(getEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
 	bc.ShouldPublish = currentBranch == bc.PublishBranch
 
-	criticalFiles, criticalFolders, err := separateCriticalFiles(bc.WorkspaceRoot, bc.CriticalPaths)
+	criticalFiles, criticalFolders, err := separateCriticalPaths(bc.WorkspaceRoot, bc.CriticalPaths)
 	rebuildAll = rebuildAll || criticalFileChanged(allDirtyPaths, criticalFiles)
 	dirtyFolders := getUniqueFolders(allDirtyPaths)
 	rebuildAll = rebuildAll || criticalFolderChanged(dirtyFolders, criticalFolders)
@@ -164,7 +175,8 @@ func getLines(input, splitOn []byte) (lines []string) {
 	return
 }
 
-func separateCriticalFiles(workspaceRoot string, criticalPaths []string) (criticalFiles []string, criticalFolders []string, err error) {
+// separates the files from the folders in the criticalPaths array
+func separateCriticalPaths(workspaceRoot string, criticalPaths []string) (criticalFiles []string, criticalFolders []string, err error) {
 	var fi fs.FileInfo
 	for _, path := range criticalPaths {
 		path := filepath.Join(workspaceRoot, path)
@@ -183,6 +195,7 @@ func separateCriticalFiles(workspaceRoot string, criticalPaths []string) (critic
 	return
 }
 
+// determines if a critical file has been changed
 func criticalFileChanged(dirtyPaths []string, criticalFiles []string) (result bool) {
 	for _, file := range criticalFiles {
 		for _, dirtyFile := range dirtyPaths {
@@ -195,6 +208,7 @@ func criticalFileChanged(dirtyPaths []string, criticalFiles []string) (result bo
 	return
 }
 
+// determines if a dirty folder is a critical folder or a child of a critical folder.
 func criticalFolderChanged(dirtyFolders []string, criticalFolders []string) (result bool) {
 	for _, folder := range criticalFolders {
 		for _, dirtyFolder := range dirtyFolders {

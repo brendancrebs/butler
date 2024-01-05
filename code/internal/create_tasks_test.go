@@ -29,7 +29,7 @@ func Test_separateCriticalFiles(t *testing.T) {
 
 	for _, test := range tests {
 		Convey(test.desc, t, func() {
-			criticalFiles, criticalFolders, err := separateCriticalFiles(workspaceRoot, test.inputPaths)
+			criticalFiles, criticalFolders, err := separateCriticalPaths(workspaceRoot, test.inputPaths)
 			So(err, ShouldBeNil)
 			So(criticalFiles, ShouldResemble, test.expectedCriticalFiles)
 			So(criticalFolders, ShouldResemble, test.expectedCriticalFolders)
@@ -37,7 +37,7 @@ func Test_separateCriticalFiles(t *testing.T) {
 	}
 
 	Convey("fails when incorrect critical path included", t, func() {
-		criticalFiles, criticalFolders, err := separateCriticalFiles(workspaceRoot, []string{"incorrect_path/fail"})
+		criticalFiles, criticalFolders, err := separateCriticalPaths(workspaceRoot, []string{"incorrect_path/fail"})
 		So(err, ShouldNotBeNil)
 		So(criticalFiles, ShouldResemble, []string(nil))
 		So(criticalFolders, ShouldResemble, []string(nil))
