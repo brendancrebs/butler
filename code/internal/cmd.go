@@ -95,6 +95,9 @@ func run(cmd *cobra.Command, args []string) (err error) {
 		config.Blocked = mergeMaps(ignorePaths.Blocked, config.Blocked)
 	}
 
+	config.Allowed = cleanPaths(config.Allowed)
+	config.Blocked = cleanPaths(config.Blocked)
+
 	_ = printConfig(config, cmd)
 
 	defer publishResults(config)

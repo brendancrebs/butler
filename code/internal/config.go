@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -141,4 +142,16 @@ func useFlagIfChangedString(a, b string, c bool) string {
 		return b
 	}
 	return a
+}
+
+// Uses filepath.Clean() to update the allowed/blocked filepath stings to a consistent format.
+func cleanPaths(pathMap map[string]bool) map[string]bool {
+	cleanedPaths := make(map[string]bool)
+
+	for path, value := range pathMap {
+		cleanPath := filepath.Clean(path)
+		cleanedPaths[cleanPath] = value
+	}
+
+	return cleanedPaths
 }
