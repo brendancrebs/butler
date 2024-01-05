@@ -39,17 +39,18 @@
     "goconvey",
     "lintcli",
     "nolint",
+    "omitempty",
     "unmarshal",
     "unmarshaling",
     "unparam",
     "templating",
-    "selinc"
+    "selinc",
+    "struct"
   ],
   "ignorePaths": [
     ".vscode",
     "cspell.json",
     ".devcontainer/*.json",
-    ".devcontainer/environments/*",
-    ".devcontainer/environments/*"
+    ".devcontainer/build/.devcontainer/*"
   ]
 }

@@ -1,0 +1,46 @@
+// Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
+// SEL Confidential
+{
+  "name": "Butler Dev Container",
+  "image": "hop-docker-dev.artifactory.metro.ad.selinc.com/sel-proxy-ubuntu:jammy-20230126",
+  "containerUser": "vscode",
+  "containerEnv": {
+    "CGO_ENABLED": "0",
+    "GOPRIVATE": "bitbucket.metro.ad.selinc.com/*"
+  },
+  "features": {
+    "hop-docker-dev.artifactory.metro.ad.selinc.com/devcontainers/features/go:1.0.1": {
+      "version": "1.19.4",
+      "golangciLintVersion": "1.50.1",
+      "goDelveVersion": "1.20.2",
+      "goOutlineVersion": "1.0.0",
+      "goaVersion": "3.11.1",
+      "goImportsVersion": "0.9.3",
+      "goModifyTagsVersion": "1.16.0",
+      "goPKGSVersion": "2.1.2",
+      "goPlayVersion": "1.0.0",
+      "goPLSVersion": "0.12.2",
+      "goTestsVersion": "1.6.0",
+      "IMPLVersion": "1.2.0",
+      "goMockVersion": "1.6.0",
+      "protocGoGRPCVersion": "1.3.0",
+      "protoGoVersion": "1.30.0"
+    },
+    "hop-docker-dev.artifactory.metro.ad.selinc.com/devcontainers/features/node:1.0.0": {
+      "version": "18.16.0",
+      "pnpmVersion": "8.6.2",
+      "aliasPnpm": true
+    },
+    "hop-docker-dev.artifactory.metro.ad.selinc.com/devcontainers/features/npm-packages:1.0.0-preview.22": {
+      "packages": "@devcontainers/cli:0.50.2"
+    },
+    "docker.sel.inc/devcontainers/features/common-utils:2": {
+      "username": "vscode"
+    },
+    "docker.sel.inc/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "overrideFeatureInstallOrder": [
+    "hop-docker-dev.artifactory.metro.ad.selinc.com/devcontainers/features/common-utils",
+    "hop-docker-dev.artifactory.metro.ad.selinc.com/devcontainers/features/docker-outside-of-docker"
+  ]
+}

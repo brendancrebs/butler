@@ -1,0 +1,23 @@
+pipeline {
+    agent none
+    options {
+        timeout(time: 20, unit: 'MINUTES')
+    }
+    stages {
+        stage('Test and Lint') {
+            agent {
+                kubernetes {
+                yamlFile './ci/build-agent.yaml'
+                defaultContainer 'butler-builder'
+                }
+            }
+            environment {
+                ARTIFACTORY_ACCOUNT = credentials('artifactory-service-account')
+                BITBUCKET_ACCESS_TOKEN = credentials('bitbucket-access-token')
+            }
+            steps {
+                sh 'echo hello world'
+            }
+        }
+    }
+}
