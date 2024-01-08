@@ -28,17 +28,23 @@ func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
 		return err
 	}
 
-	fmt.Printf("allPaths: %v\n", allPaths)
+	fmt.Printf("\nallPaths: %v\n\nallDirtyPaths: %v\n", allPaths, allDirtyPaths)
 
 	// Next steps:
 
 	// 1. run preliminary commands
 
-	// 2. create workspace objects for each language
+	// 2. create workspace array for each language
 
-	// 3. create tasks for each language
+	// 3. get internal dependencies for each language
 
-	// 4. Return the populated task queue
+	// 4. get external dependencies for each language
+
+	// 5. determine dirty workspaces
+
+	// 6. create tasks for each language
+
+	// 7. Return the populated task queue
 
 	return
 }
@@ -179,7 +185,7 @@ func getLines(input, splitOn []byte) (lines []string) {
 func separateCriticalPaths(workspaceRoot string, criticalPaths []string) (criticalFiles []string, criticalFolders []string, err error) {
 	var fi fs.FileInfo
 	for _, path := range criticalPaths {
-		path := filepath.Join(workspaceRoot, path)
+		path = filepath.Join(workspaceRoot, path)
 		fi, err = os.Stat(path)
 		if err != nil {
 			break
