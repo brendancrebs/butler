@@ -40,15 +40,39 @@ func replaceStubs() (undo func()) {
 }
 
 func Test_RunWithErr(t *testing.T) {
-	os.Setenv("BUTLER_SHOULD_RUN_ALL", "true")
 	Convey("Just running the command for outer coverage of Execute", t, func() {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml", "--all"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
 		Execute()
 
 		// Success determined by existence of the results json file.
+		_, err := os.Stat("./butler_results.json")
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldEqual, "")
+	})
+
+	Convey("Running command with BUTLER_SHOULD_RUN_ALL env var enabled", t, func() {
+		os.Setenv("BUTLER_SHOULD_RUN_ALL", "true")
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		Execute()
+
+		_, err := os.Stat("./butler_results.json")
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldEqual, "")
+	})
+
+	Convey("Running command with git turned off", t, func() {
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.no_git.yaml", "--all"})
+		Execute()
+
 		_, err := os.Stat("./butler_results.json")
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldEqual, "")

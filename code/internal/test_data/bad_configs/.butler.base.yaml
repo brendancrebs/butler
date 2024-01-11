@@ -2,3 +2,5 @@
 # SEL Confidential
 
 workspace-root: "/workspaces/butler/code/internal/test_data/bad_configs"
+
+git-repository: true

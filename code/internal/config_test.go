@@ -17,27 +17,22 @@ func Test_loadConfig(t *testing.T) {
 			configPath = temp
 		}()
 
+		config := &ButlerConfig{}
+
 		expected := &ButlerConfig{
-			Allowed: map[string]bool{
-				"test_repo": true,
-			},
-			Blocked: map[string]bool{
-				"ci/":           true,
-				"specs":         true,
-				".devcontainer": true,
-			},
+			Allowed:         []string{"test_repo"},
+			Blocked:         []string{"ci/", "specs", ".devcontainer"},
 			WorkspaceRoot:   "/workspaces/butler",
+			GitRepo:         true,
 			ShouldLint:      true,
 			ShouldTest:      true,
 			ShouldBuild:     false,
 			ShouldPublish:   false,
 			ShouldRunAll:    false,
-			Registry:        "hop-docker-dev.artifactory.metro.ad.selinc.com",
 			PublishBranch:   "main",
-			TagDateFormat:   "060102",
 			ResultsFilePath: "./butler_results.json",
 		}
-		config, err := loadConfig()
+		err := config.Load(configPath)
 
 		So(err, ShouldBeNil)
 		So(config, ShouldResemble, expected)
@@ -50,9 +45,14 @@ func Test_loadConfig(t *testing.T) {
 			configPath = temp
 		}()
 
-		config, err := loadConfig()
+		config := &ButlerConfig{}
+		expected := &ButlerConfig{
+			ResultsFilePath: "./butler_results.json",
+		}
+
+		err := config.Load(configPath)
 		So(err, ShouldNotBeNil)
-		So(config, ShouldBeNil)
+		So(config, ShouldResemble, expected)
 	})
 }
 
@@ -62,12 +62,8 @@ func Test_loadButlerIgnore(t *testing.T) {
 			WorkspaceRoot: "./test_data/test_helpers",
 		}
 		expected := &ButlerPaths{
-			Allowed: map[string]bool{
-				"good_path": true,
-			},
-			Blocked: map[string]bool{
-				"bad_path": true,
-			},
+			Allowed: []string{"good_path"},
+			Blocked: []string{"bad_path"},
 		}
 		paths, err := loadButlerIgnore(testConfig)
 

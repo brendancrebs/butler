@@ -58,6 +58,6 @@ implementation to accomplish this:
 8. Finally, tasks will be executed for each dirty workspace in the repo. The results of each task will be printed to the
    console. Any failed task will cause the entire Butler build the fail, and the log of the failure will be printed.
 
-9. Wether Butler passed or failed, a file called `butler_results.json` will be produced that contains information
+9. Whether Butler passed or failed, a file called `butler_results.json` will be produced that contains information
    regarding the build. This file will be sent to any subscribers and then stored for future viewing using the Butler
    front end app called `Butler Analytics`.

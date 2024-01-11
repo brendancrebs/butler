@@ -2,11 +2,12 @@
 # SEL Confidential
 
 allowed-paths:
-  code: true
-  test_repo: true
+  - code
+  - test_repo
+  - new
 
 blocked-paths:
-  node_modules: true
-  coverage: true
-  specs: true
-  .devcontainer: true
+  - node_modules
+  - coverage
+  - specs
+  - .devcontainer

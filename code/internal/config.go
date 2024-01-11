@@ -16,52 +16,40 @@ import (
 )
 
 const (
-	defaultRegistry = "hop-docker-dev.artifactory.metro.ad.selinc.com"
-	tagDateFormat   = "060102"
-	BaseConfigName  = ".butler.base.yaml"
-	ignoreName      = ".butler.ignore.yaml"
+	BaseConfigName = ".butler.base.yaml"
+	ignoreName     = ".butler.ignore.yaml"
 )
 
 var (
 	shouldPublishEnv, _ = strconv.ParseBool(getEnvOrDefault(envPublish, "false"))
-	buildIDEnv          = strings.TrimSpace(getEnvOrDefault(envBuildID, ""))
 	branchNameEnv       = strings.TrimSpace(getEnvOrDefault(envBranch, ""))
 )
 
 // ButlerPaths specifies the allowed and blocked paths within the .butler.ignore.yaml.
 type ButlerPaths struct {
-	Allowed map[string]bool `yaml:"allowed-paths,omitempty"`
-	Blocked map[string]bool `yaml:"blocked-paths,omitempty"`
+	Allowed []string `yaml:"allowed-paths,omitempty"`
+	Blocked []string `yaml:"blocked-paths,omitempty"`
 }
 
 // ButlerConfig specifies the Butler configuration options.
 type ButlerConfig struct {
-	Allowed         map[string]bool `yaml:"allowed-paths,omitempty"`
-	Blocked         map[string]bool `yaml:"blocked-paths,omitempty"`
-	Registry        string          `yaml:"Registry,omitempty"`
-	PublishBranch   string          `yaml:"publish-branch,omitempty"`
-	BuildID         string          `yaml:"build-id,omitempty"`
-	TagDateFormat   string          `yaml:"tag-date-format,omitempty"`
-	ResultsFilePath string          `yaml:"results-file-path,omitempty"`
-	ReleaseVersion  string          `yaml:"release-version,omitempty"`
-	WorkspaceRoot   string          `yaml:"workspace-root,omitempty"`
-	CriticalPaths   []string        `yaml:"critical-paths,omitempty"`
-	ShouldRunAll    bool            `yaml:"should-run-all,omitempty"`
-	ShouldLint      bool            `yaml:"should-lint,omitempty"`
-	ShouldTest      bool            `yaml:"should-test,omitempty"`
-	ShouldBuild     bool            `yaml:"should-build,omitempty"`
-	ShouldPublish   bool            `yaml:"should-publish,omitempty"`
+	Allowed         []string `yaml:"allowed-paths,omitempty"`
+	Blocked         []string `yaml:"blocked-paths,omitempty"`
+	CriticalPaths   []string `yaml:"critical-paths,omitempty"`
+	PublishBranch   string   `yaml:"publish-branch,omitempty"`
+	ResultsFilePath string   `yaml:"results-file-path,omitempty"`
+	WorkspaceRoot   string   `yaml:"workspace-root,omitempty"`
+	GitRepo         bool     `yaml:"git-repository,omitempty"`
+	ShouldRunAll    bool     `yaml:"should-run-all,omitempty"`
+	ShouldLint      bool     `yaml:"should-lint,omitempty"`
+	ShouldTest      bool     `yaml:"should-test,omitempty"`
+	ShouldBuild     bool     `yaml:"should-build,omitempty"`
+	ShouldPublish   bool     `yaml:"should-publish,omitempty"`
 }
 
 func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConfig) {
 	bc.PublishBranch = useFlagIfChangedString(bc.PublishBranch, flags.PublishBranch,
 		cmd.Flags().Changed("publish-branch"))
-	bc.BuildID = useFlagIfChangedString(bc.BuildID, flags.BuildID,
-		cmd.Flags().Changed("build-id"))
-	bc.TagDateFormat = useFlagIfChangedString(bc.TagDateFormat, flags.TagDateFormat,
-		cmd.Flags().Changed("date-format"))
-	bc.ReleaseVersion = useFlagIfChangedString(bc.ReleaseVersion, flags.ReleaseVersion,
-		cmd.Flags().Changed("release-version"))
 	bc.WorkspaceRoot = useFlagIfChangedString(bc.WorkspaceRoot, flags.WorkspaceRoot,
 		cmd.Flags().Changed("workspace-root"))
 	bc.ShouldRunAll = useFlagIfChangedBool(bc.ShouldRunAll, flags.ShouldRunAll, cmd.Flags().Changed("all"))
@@ -73,30 +61,32 @@ func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConf
 }
 
 // loads base Butler config
-func loadConfig() (config *ButlerConfig, err error) {
-	config = &ButlerConfig{
-		// load config with env vars.
-		Registry:        defaultRegistry,
-		BuildID:         buildIDEnv,
-		ShouldPublish:   shouldPublishEnv,
-		PublishBranch:   branchNameEnv,
-		TagDateFormat:   tagDateFormat,
-		ResultsFilePath: "./butler_results.json",
-	}
+func (bc *ButlerConfig) Load(configPath string) error {
+	bc.ShouldPublish = shouldPublishEnv
+	bc.PublishBranch = branchNameEnv
+	bc.ResultsFilePath = "./butler_results.json"
 
 	if _, err := os.Stat(configPath); err != nil {
-		return nil, err
+		return err
 	}
 	content, _ := os.ReadFile(configPath)
-	err = yaml.Unmarshal(content, config)
-	if err != nil {
-		return nil, fmt.Errorf("Configuration parse error: %w", err)
+
+	if err := yaml.Unmarshal(content, bc); err != nil {
+		return fmt.Errorf("Configuration parse error: %w", err)
 	}
 
-	return
+	return nil
 }
 
-// loads butler ignore file if it exists
+func (c *ButlerConfig) String() string {
+	configPretty, _ := yaml.Marshal(c)
+	return fmt.Sprintf(`Butler Configuration:\n
+	Used config file %s\n
+	<<<yaml\n
+	# Configuration, including command line flags, used for the current run.\n
+	%s>>>\n\n`, configPath, string(configPretty))
+}
+
 func loadButlerIgnore(bc *ButlerConfig) (paths *ButlerPaths, err error) {
 	ignorePath := path.Join(bc.WorkspaceRoot, ignoreName)
 	if _, err := os.Stat(ignorePath); err != nil {
@@ -107,19 +97,6 @@ func loadButlerIgnore(bc *ButlerConfig) (paths *ButlerPaths, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("Butler ignore parse error: %w", err)
 	}
-
-	return
-}
-
-func printConfig(config *ButlerConfig, cmd *cobra.Command) (err error) {
-	configPretty, err := yaml.Marshal(config)
-
-	fmt.Fprintf(cmd.OutOrStdout(), "Butler Configuration:\n")
-	fmt.Fprintf(cmd.OutOrStdout(), "Used config file %s\n", configPath)
-	fmt.Fprintf(cmd.OutOrStdout(), "<<<yaml\n")
-	fmt.Fprintf(cmd.OutOrStdout(), "# Configuration, including command line flags, used for the current run.\n")
-	fmt.Fprintf(cmd.OutOrStdout(), "%s", string(configPretty))
-	fmt.Fprintf(cmd.OutOrStdout(), ">>>\n\n")
 
 	return
 }
@@ -145,12 +122,11 @@ func useFlagIfChangedString(a, b string, c bool) string {
 }
 
 // Uses filepath.Clean() to update the allowed/blocked filepath stings to a consistent format.
-func cleanPaths(pathMap map[string]bool) map[string]bool {
-	cleanedPaths := make(map[string]bool)
-
-	for path, value := range pathMap {
-		cleanPath := filepath.Clean(path)
-		cleanedPaths[cleanPath] = value
+func cleanPaths(paths []string) []string {
+	var cleanedPaths []string
+	for _, path := range paths {
+		cleanedPath := filepath.Clean(path)
+		cleanedPaths = append(cleanedPaths, cleanedPath)
 	}
 
 	return cleanedPaths

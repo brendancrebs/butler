@@ -5,7 +5,9 @@ publish-branch: "main"
 
 tag-date-format: "060102"
 
-should-run-all: true
+git-repository: true
+
+should-run-all: false
 
 should-lint: true
 should-test: true

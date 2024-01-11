@@ -5,6 +5,7 @@ package internal
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -64,22 +65,19 @@ func parseFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVarP(&flags.ShouldPublish, "publish", "p", false,
 		"Enables publishing.  Publishing also requires --publish-branch and --build-id.")
 
+	cmd.PersistentFlags().BoolVarP(&flags.GitRepo, "git-repository", "g", false,
+		"sets whether the repository is a git repository or not.")
+
 	cmd.PersistentFlags().StringVar(&flags.PublishBranch, "publish-branch", branchNameEnv,
 		"Branch when we will publish or diff to, based on equality to current branch name.")
 
-	cmd.PersistentFlags().StringVar(&flags.BuildID, "build-id", buildIDEnv,
-		"Build-id value in the release tag.  Publish only when not equal to \"\".")
-
-	cmd.PersistentFlags().StringVar(&flags.TagDateFormat, "date-format", "060102",
-		"Format of the date field in the release tag.")
-	cmd.PersistentFlags().StringVar(&flags.ReleaseVersion, "release-version", "",
-		"Enables a release build for the given version")
 	cmd.PersistentFlags().StringVar(&flags.WorkspaceRoot, "workspace-root", "/workspaces/butler",
 		"The root of the repository where Butler will start searching.")
 }
 
 func run(cmd *cobra.Command, args []string) (err error) {
-	config, err := loadConfig()
+	config := &ButlerConfig{}
+	err = config.Load(configPath)
 	if err != nil {
 		return
 	}
@@ -90,20 +88,20 @@ func run(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	if ignorePaths != nil {
-		config.Allowed = mergeMaps(ignorePaths.Allowed, config.Allowed)
-		config.Blocked = mergeMaps(ignorePaths.Blocked, config.Blocked)
-	}
+	config.Allowed = append(config.Allowed, ignorePaths.Allowed...)
+	config.Blocked = append(config.Blocked, ignorePaths.Blocked...)
 
 	config.Allowed = cleanPaths(config.Allowed)
 	config.Blocked = cleanPaths(config.Blocked)
 
-	_ = printConfig(config, cmd)
+	config.Allowed = removeDuplicates(config.Allowed)
+	config.Blocked = removeDuplicates(config.Blocked)
+
+	fmt.Fprintln(cmd.OutOrStdout(), config)
 
 	defer publishResults(config)
 
-	err = ButlerSetup(config, cmd)
-	if err != nil {
+	if err = ButlerSetup(config, cmd); err != nil {
 		return
 	}
 

@@ -14,7 +14,7 @@ workspace-root: "/workspaces/butler"
 
 publish-branch: "main"
 
-git-repository: true
+git-repository: false
 
 should-run-all: false
 

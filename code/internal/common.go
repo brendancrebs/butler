@@ -16,16 +16,16 @@ func getEnvOrDefault(name, defaultValue string) string {
 	return defaultValue
 }
 
-// merges two maps into one.
-func mergeMaps(ignoreMap, configMap map[string]bool) map[string]bool {
-	result := make(map[string]bool)
+// removes duplicates from a slice
+func removeDuplicates(slice []string) []string {
+	seen := make(map[string]bool)
+	result := []string{}
 
-	for key, value := range ignoreMap {
-		result[key] = value
-	}
-
-	for key, value := range configMap {
-		result[key] = value
+	for _, v := range slice {
+		if !seen[v] {
+			seen[v] = true
+			result = append(result, v)
+		}
 	}
 
 	return result

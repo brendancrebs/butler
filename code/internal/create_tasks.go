@@ -18,17 +18,24 @@ import (
 
 // This function will return a queue populated with tasks
 func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
-	allPaths := getFilePaths([]string{bc.WorkspaceRoot}, true, bc.Allowed, bc.Blocked)
-	allDirtyPaths, err := getDirtyPaths(bc.PublishBranch)
-	if err != nil {
-		return err
+	allPaths := getFilePaths([]string{bc.WorkspaceRoot}, bc.Allowed, bc.Blocked, true)
+
+	var dirtyFolders []string
+	if bc.GitRepo && !bc.ShouldRunAll {
+		allDirtyPaths, err := getDirtyPaths(bc.PublishBranch)
+		if err != nil {
+			return err
+		}
+
+		dirtyFolders, err = shouldRunAll(bc, allDirtyPaths)
+		if err != nil {
+			return err
+		}
+	} else {
+		bc.ShouldRunAll = true
 	}
 
-	if err = shouldRunAll(bc, allDirtyPaths); err != nil {
-		return err
-	}
-
-	fmt.Printf("\nallPaths: %v\n\nallDirtyPaths: %v\n", allPaths, allDirtyPaths)
+	fmt.Printf("\nallPaths: %v\n\nallDirtyFolders: %v\n", allPaths, dirtyFolders)
 
 	// Next steps:
 
@@ -50,7 +57,7 @@ func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
 }
 
 // Determines if Butler requires a full build.
-func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
+func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (dirtyFolders []string, err error) {
 	// get current git branch name
 	currentBranch, err := getCurrentBranch()
 	if err != nil {
@@ -62,7 +69,7 @@ func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 
 	criticalFiles, criticalFolders, err := separateCriticalPaths(bc.WorkspaceRoot, bc.CriticalPaths)
 	rebuildAll = rebuildAll || criticalFileChanged(allDirtyPaths, criticalFiles)
-	dirtyFolders := getUniqueFolders(allDirtyPaths)
+	dirtyFolders = getUniqueFolders(allDirtyPaths)
 	rebuildAll = rebuildAll || criticalFolderChanged(dirtyFolders, criticalFolders)
 
 	bc.ShouldRunAll = bc.ShouldRunAll || rebuildAll
@@ -94,11 +101,11 @@ func getCurrentBranch() (branch string, err error) {
 
 // getFilePaths takes a set of directories and returns all of the filepaths from them.
 // If `shouldRecurse`, then it calls recurseFilepaths for each folder.
-func getFilePaths(dirs []string, shouldRecurse bool, allowed, blocked map[string]bool) []string {
+func getFilePaths(dirs, allowed, blocked []string, shouldRecurse bool) []string {
 	paths := make([]string, 0)
 
 	for _, base := range dirs {
-		paths = recurseFilepaths(base, paths, shouldRecurse, allowed, blocked)
+		paths = recurseFilepaths(paths, allowed, blocked, base, shouldRecurse)
 	}
 
 	sort.Strings(paths)
@@ -107,7 +114,7 @@ func getFilePaths(dirs []string, shouldRecurse bool, allowed, blocked map[string
 
 // recurseFilepaths reads the directory at `path` and either appends filepaths or appends the result
 // of a further call to recurseFilepaths.
-func recurseFilepaths(path string, paths []string, shouldRecurse bool, allowed, blocked map[string]bool) []string {
+func recurseFilepaths(paths, allowed, blocked []string, path string, shouldRecurse bool) []string {
 	fileInfos, _ := os.ReadDir(path)
 	for _, fi := range fileInfos {
 		path := filepath.Join(path, fi.Name())
@@ -117,15 +124,15 @@ func recurseFilepaths(path string, paths []string, shouldRecurse bool, allowed, 
 		if !fi.IsDir() {
 			paths = append(paths, path)
 		} else if shouldRecurse {
-			paths = recurseFilepaths(path, paths, shouldRecurse, allowed, blocked)
+			paths = recurseFilepaths(paths, allowed, blocked, path, shouldRecurse)
 		}
 	}
 	return paths
 }
 
-func allowedAndNotBlocked(path string, allowed, blocked map[string]bool) bool {
+func allowedAndNotBlocked(path string, allowed, blocked []string) bool {
 	isAllowed := false
-	for key := range allowed {
+	for _, key := range allowed {
 		if strings.Contains(path, key) {
 			isAllowed = true
 			break
@@ -133,7 +140,7 @@ func allowedAndNotBlocked(path string, allowed, blocked map[string]bool) bool {
 	}
 
 	isBlocked := false
-	for key := range blocked {
+	for _, key := range blocked {
 		if strings.Contains(path, key) {
 			isBlocked = true
 			break
