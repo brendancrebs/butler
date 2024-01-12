@@ -16,8 +16,9 @@ func getEnvOrDefault(name, defaultValue string) string {
 	return defaultValue
 }
 
-// removes duplicates from a slice
-func removeDuplicates(slice []string) []string {
+// concatenates and removes duplicates from two slices
+func concatSlices(ignore, config []string) []string {
+	slice := cleanPaths(append(ignore, config...))
 	seen := make(map[string]bool)
 	result := []string{}
 

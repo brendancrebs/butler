@@ -88,14 +88,8 @@ func run(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	config.Allowed = append(config.Allowed, ignorePaths.Allowed...)
-	config.Blocked = append(config.Blocked, ignorePaths.Blocked...)
-
-	config.Allowed = cleanPaths(config.Allowed)
-	config.Blocked = cleanPaths(config.Blocked)
-
-	config.Allowed = removeDuplicates(config.Allowed)
-	config.Blocked = removeDuplicates(config.Blocked)
+	config.Allowed = concatSlices(ignorePaths.Allowed, config.Allowed)
+	config.Blocked = concatSlices(ignorePaths.Blocked, config.Blocked)
 
 	fmt.Fprintln(cmd.OutOrStdout(), config)
 

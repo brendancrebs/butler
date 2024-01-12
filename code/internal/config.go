@@ -78,8 +78,8 @@ func (bc *ButlerConfig) Load(configPath string) error {
 	return nil
 }
 
-func (c *ButlerConfig) String() string {
-	configPretty, _ := yaml.Marshal(c)
+func (bc *ButlerConfig) String() string {
+	configPretty, _ := yaml.Marshal(bc)
 	return fmt.Sprintf(`Butler Configuration:\n
 	Used config file %s\n
 	<<<yaml\n
@@ -102,8 +102,6 @@ func loadButlerIgnore(bc *ButlerConfig) (paths *ButlerPaths, err error) {
 }
 
 // useFlagIfChangedBool returns b if c or a.
-//
-//nolint:unparam // okay always false.
 func useFlagIfChangedBool(a, b, c bool) bool {
 	if c {
 		return b
@@ -112,8 +110,6 @@ func useFlagIfChangedBool(a, b, c bool) bool {
 }
 
 // useFlagIfChangedString returns b if c or a.
-//
-//nolint:unparam // okay always "".
 func useFlagIfChangedString(a, b string, c bool) string {
 	if c {
 		return b
