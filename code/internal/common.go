@@ -16,11 +16,11 @@ func getEnvOrDefault(name, defaultValue string) string {
 	return defaultValue
 }
 
-// concatenates and removes duplicates from two slices
-func concatSlices(ignore, config []string) []string {
+// concatenates two slices containing file paths. Each path in the resulting slice will be cleaned
+// with cleanPaths() and duplicates will be removed.
+func concatSlices(ignore, config []string) (result []string) {
 	slice := cleanPaths(append(ignore, config...))
 	seen := make(map[string]bool)
-	result := []string{}
 
 	for _, v := range slice {
 		if !seen[v] {
@@ -29,5 +29,5 @@ func concatSlices(ignore, config []string) []string {
 		}
 	}
 
-	return result
+	return
 }

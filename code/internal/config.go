@@ -16,8 +16,10 @@ import (
 )
 
 const (
-	BaseConfigName = ".butler.base.yaml"
-	ignoreName     = ".butler.ignore.yaml"
+	BaseConfigName    = ".butler.base.yaml"
+	ignoreName        = ".butler.ignore.yaml"
+	gitCommand        = "git"
+	butlerResultsPath = "./butler_results.json"
 )
 
 var (
@@ -61,21 +63,22 @@ func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConf
 }
 
 // loads base Butler config
-func (bc *ButlerConfig) Load(configPath string) error {
+func (bc *ButlerConfig) Load(configPath string) (err error) {
 	bc.ShouldPublish = shouldPublishEnv
 	bc.PublishBranch = branchNameEnv
-	bc.ResultsFilePath = "./butler_results.json"
+	bc.ResultsFilePath = butlerResultsPath
 
-	if _, err := os.Stat(configPath); err != nil {
-		return err
-	}
-	content, _ := os.ReadFile(configPath)
-
-	if err := yaml.Unmarshal(content, bc); err != nil {
-		return fmt.Errorf("Configuration parse error: %w", err)
+	if _, err = os.Stat(configPath); err != nil {
+		return
 	}
 
-	return nil
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		return
+	}
+
+	err = yaml.Unmarshal(content, bc)
+	return
 }
 
 func (bc *ButlerConfig) String() string {
@@ -92,16 +95,17 @@ func loadButlerIgnore(bc *ButlerConfig) (paths *ButlerPaths, err error) {
 	if _, err := os.Stat(ignorePath); err != nil {
 		return nil, nil
 	}
-	content, _ := os.ReadFile(ignorePath)
-	err = yaml.Unmarshal(content, &paths)
+
+	content, err := os.ReadFile(ignorePath)
 	if err != nil {
-		return nil, fmt.Errorf("Butler ignore parse error: %w", err)
+		return
 	}
 
+	err = yaml.Unmarshal(content, &paths)
 	return
 }
 
-// useFlagIfChangedBool returns b if c or a.
+// useFlagIfChangedBool returns b if c is true, otherwise a.
 func useFlagIfChangedBool(a, b, c bool) bool {
 	if c {
 		return b
@@ -109,7 +113,7 @@ func useFlagIfChangedBool(a, b, c bool) bool {
 	return a
 }
 
-// useFlagIfChangedString returns b if c or a.
+// useFlagIfChangedString returns b if c is true, otherwise a.
 func useFlagIfChangedString(a, b string, c bool) string {
 	if c {
 		return b
@@ -117,13 +121,12 @@ func useFlagIfChangedString(a, b string, c bool) string {
 	return a
 }
 
-// Uses filepath.Clean() to update the allowed/blocked filepath stings to a consistent format.
-func cleanPaths(paths []string) []string {
-	var cleanedPaths []string
+// Uses filepath.Clean() to update the allowed/blocked filepath strings to a consistent format.
+func cleanPaths(paths []string) (cleanedPaths []string) {
 	for _, path := range paths {
 		cleanedPath := filepath.Clean(path)
 		cleanedPaths = append(cleanedPaths, cleanedPath)
 	}
 
-	return cleanedPaths
+	return
 }

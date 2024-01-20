@@ -97,6 +97,7 @@ func Test_getCurrentBranchCoverage(t *testing.T) {
 		branch, err := getCurrentBranch()
 
 		So(branch, ShouldEqual, "")
+		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "git executable not found")
 	})
 }

@@ -13,12 +13,8 @@ func Test_loadConfig(t *testing.T) {
 	Convey("Ability to parse a yaml config for all of its values", t, func() {
 		temp := configPath
 		configPath = "./test_data/test_helpers/.butler.base.yaml"
-		defer func() {
-			configPath = temp
-		}()
 
 		config := &ButlerConfig{}
-
 		expected := &ButlerConfig{
 			Allowed:         []string{"test_repo"},
 			Blocked:         []string{"ci/", "specs", ".devcontainer"},
@@ -33,6 +29,7 @@ func Test_loadConfig(t *testing.T) {
 			ResultsFilePath: "./butler_results.json",
 		}
 		err := config.Load(configPath)
+		configPath = temp
 
 		So(err, ShouldBeNil)
 		So(config, ShouldResemble, expected)
@@ -41,9 +38,6 @@ func Test_loadConfig(t *testing.T) {
 	Convey("Failure to parse config file is covered", t, func() {
 		temp := configPath
 		configPath = "./test_data/bad_configs/invalid.butler.bad"
-		defer func() {
-			configPath = temp
-		}()
 
 		config := &ButlerConfig{}
 		expected := &ButlerConfig{
@@ -51,13 +45,15 @@ func Test_loadConfig(t *testing.T) {
 		}
 
 		err := config.Load(configPath)
+		configPath = temp
+
 		So(err, ShouldNotBeNil)
 		So(config, ShouldResemble, expected)
 	})
 }
 
 func Test_loadButlerIgnore(t *testing.T) {
-	Convey("Paths successfully parsed from Butler ignore.", t, func() {
+	Convey("Paths successfully parsed from .butler.ignore.", t, func() {
 		testConfig := &ButlerConfig{
 			WorkspaceRoot: "./test_data/test_helpers",
 		}
@@ -70,7 +66,7 @@ func Test_loadButlerIgnore(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(paths, ShouldResemble, expected)
 	})
-	Convey("Nothing returned in no Butler ignore if found.", t, func() {
+	Convey("Nothing returned if no .butler.ignore file is found.", t, func() {
 		testConfig := &ButlerConfig{
 			WorkspaceRoot: "/",
 		}
@@ -79,7 +75,7 @@ func Test_loadButlerIgnore(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(paths, ShouldBeNil)
 	})
-	Convey("Failure to parse Butler ignore.", t, func() {
+	Convey("Failure to parse .butler.ignore.", t, func() {
 		testConfig := &ButlerConfig{
 			WorkspaceRoot: "./test_data/bad_configs",
 		}

@@ -85,7 +85,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/invalid.butler.bad"})
 		Execute()
 
-		// butler_results.json should still exists despite error
+		// butler_results.json should still exist despite error
 		_, err := os.Stat("./butler_results.json")
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldContainSubstring, "Error: stat ./test_data/test_helpers/invalid.butler.bad: no such file or directory")

@@ -20,22 +20,21 @@ import (
 func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
 	allPaths := getFilePaths([]string{bc.WorkspaceRoot}, bc.Allowed, bc.Blocked, true)
 
-	var dirtyFolders []string
 	if bc.GitRepo && !bc.ShouldRunAll {
 		allDirtyPaths, err := getDirtyPaths(bc.PublishBranch)
 		if err != nil {
 			return err
 		}
+		dirtyFolders := getUniqueFolders(allDirtyPaths)
 
-		dirtyFolders, err = shouldRunAll(bc, allDirtyPaths)
-		if err != nil {
+		if err = shouldRunAll(bc, allDirtyPaths, dirtyFolders); err != nil {
 			return err
 		}
 	} else {
 		bc.ShouldRunAll = true
 	}
 
-	fmt.Printf("\nallPaths: %v\n\nallDirtyFolders: %v\n", allPaths, dirtyFolders)
+	fmt.Printf("\nallPaths: %v\n\n", allPaths)
 
 	// Next steps:
 
@@ -57,30 +56,27 @@ func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
 }
 
 // Determines if Butler requires a full build.
-func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (dirtyFolders []string, err error) {
+func shouldRunAll(bc *ButlerConfig, allDirtyPaths, dirtyFolders []string) (err error) {
 	// get current git branch name
 	currentBranch, err := getCurrentBranch()
 	if err != nil {
 		return
 	}
 
-	rebuildAll := strings.EqualFold(getEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
+	bc.ShouldRunAll = strings.EqualFold(getEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
 	bc.ShouldPublish = currentBranch == bc.PublishBranch
 
 	criticalFiles, criticalFolders, err := separateCriticalPaths(bc.WorkspaceRoot, bc.CriticalPaths)
-	rebuildAll = rebuildAll || criticalFileChanged(allDirtyPaths, criticalFiles)
-	dirtyFolders = getUniqueFolders(allDirtyPaths)
-	rebuildAll = rebuildAll || criticalFolderChanged(dirtyFolders, criticalFolders)
-
-	bc.ShouldRunAll = bc.ShouldRunAll || rebuildAll
+	bc.ShouldRunAll = bc.ShouldRunAll || criticalFileChanged(allDirtyPaths, criticalFiles)
+	bc.ShouldRunAll = bc.ShouldRunAll || criticalFolderChanged(dirtyFolders, criticalFolders)
 
 	return
 }
 
-// getCurrentBranch is returns the whitespace trimmed result of `git branch --show-current`
+// getCurrentBranch returns the whitespace trimmed result of `git branch --show-current`
 // which should be the branch, or an error.
 func getCurrentBranch() (branch string, err error) {
-	path, err := execLookPathStub("git")
+	path, err := execLookPathStub(gitCommand)
 	if err != nil {
 		return
 	}
@@ -99,10 +95,10 @@ func getCurrentBranch() (branch string, err error) {
 	return
 }
 
-// getFilePaths takes a set of directories and returns all of the filepaths from them.
-// If `shouldRecurse`, then it calls recurseFilepaths for each folder.
+// Takes a set of directories and calls recurseFilePath on each. recurseFilePaths will return the
+// children of each directory and all of the child files will get returned by getFilePaths.
 func getFilePaths(dirs, allowed, blocked []string, shouldRecurse bool) []string {
-	paths := make([]string, 0)
+	paths := make([]string, len(dirs))
 
 	for _, base := range dirs {
 		paths = recurseFilepaths(paths, allowed, blocked, base, shouldRecurse)
@@ -112,8 +108,8 @@ func getFilePaths(dirs, allowed, blocked []string, shouldRecurse bool) []string 
 	return paths
 }
 
-// recurseFilepaths reads the directory at `path` and either appends filepaths or appends the result
-// of a further call to recurseFilepaths.
+// Reads the directory at `path` and either appends filepaths or appends the result of a further
+// call to recurseFilepaths.
 func recurseFilepaths(paths, allowed, blocked []string, path string, shouldRecurse bool) []string {
 	fileInfos, _ := os.ReadDir(path)
 	for _, fi := range fileInfos {
@@ -155,7 +151,7 @@ func allowedAndNotBlocked(path string, allowed, blocked []string) bool {
 // changed.
 func getDirtyPaths(branch string) ([]string, error) {
 	branch = strings.TrimSpace(branch)
-	path, err := execLookPathStub("git")
+	path, err := execLookPathStub(gitCommand)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +170,7 @@ func getDirtyPaths(branch string) ([]string, error) {
 }
 
 // getLines splits on the splitOn slice, converts each grouping to a string and trims space from it.
-// Returns the set of converted liens.
+// Returns the set of converted lines.
 func getLines(input, splitOn []byte) (lines []string) {
 	lines = make([]string, 0)
 	split := bytes.Split(input, splitOn)
@@ -247,7 +243,7 @@ func getUniqueFolders(paths []string) []string {
 
 // getSortedKeys returns the keys sorted in ascending order.
 func getSortedKeys(mapStringBool map[string]bool) []string {
-	keys := make([]string, 0)
+	keys := make([]string, len(mapStringBool))
 	for key := range mapStringBool {
 		keys = append(keys, key)
 	}

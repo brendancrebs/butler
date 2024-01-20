@@ -77,8 +77,7 @@ func parseFlags(cmd *cobra.Command) {
 
 func run(cmd *cobra.Command, args []string) (err error) {
 	config := &ButlerConfig{}
-	err = config.Load(configPath)
-	if err != nil {
+	if err = config.Load(configPath); err != nil {
 		return
 	}
 	config.applyFlagsToConfig(cmd, flags)
