@@ -26,8 +26,9 @@ func Test_loadConfig(t *testing.T) {
 			ShouldPublish:   false,
 			ShouldRunAll:    false,
 			PublishBranch:   "main",
-			ResultsFilePath: "./butler_results.json",
+			ResultsFilePath: butlerResultsPath,
 		}
+
 		err := config.Load(configPath)
 		configPath = temp
 
@@ -41,7 +42,7 @@ func Test_loadConfig(t *testing.T) {
 
 		config := &ButlerConfig{}
 		expected := &ButlerConfig{
-			ResultsFilePath: "./butler_results.json",
+			ResultsFilePath: butlerResultsPath,
 		}
 
 		err := config.Load(configPath)

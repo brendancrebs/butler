@@ -185,7 +185,7 @@ func getLines(input, splitOn []byte) (lines []string) {
 }
 
 // separates the files from the folders in the criticalPaths array
-func separateCriticalPaths(workspaceRoot string, criticalPaths []string) (criticalFiles []string, criticalFolders []string, err error) {
+func separateCriticalPaths(workspaceRoot string, criticalPaths []string) (criticalFiles, criticalFolders []string, err error) {
 	var fi fs.FileInfo
 	for _, path := range criticalPaths {
 		path = filepath.Join(workspaceRoot, path)

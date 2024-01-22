@@ -35,7 +35,7 @@ func replaceStubs() (undo func()) {
 	return func() {
 		execOutputStub = originalExecOutputStub
 		execLookPathStub = originalExecLookPathStub
-		_ = os.Remove("butler_results.json")
+		_ = os.Remove(butlerResultsPath)
 	}
 }
 
@@ -48,7 +48,7 @@ func Test_RunWithErr(t *testing.T) {
 		Execute()
 
 		// Success determined by existence of the results json file.
-		_, err := os.Stat("./butler_results.json")
+		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldEqual, "")
 	})
@@ -61,7 +61,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
 		Execute()
 
-		_, err := os.Stat("./butler_results.json")
+		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldEqual, "")
 	})
@@ -73,7 +73,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.no_git.yaml", "--all"})
 		Execute()
 
-		_, err := os.Stat("./butler_results.json")
+		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldEqual, "")
 	})
@@ -86,7 +86,7 @@ func Test_RunWithErr(t *testing.T) {
 		Execute()
 
 		// butler_results.json should still exist despite error
-		_, err := os.Stat("./butler_results.json")
+		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldContainSubstring, "Error: stat ./test_data/test_helpers/invalid.butler.bad: no such file or directory")
 	})
@@ -98,7 +98,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs/no_read_permissions/.butler.locked.yaml"})
 		Execute()
 
-		_, err := os.Stat("./butler_results.json")
+		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldContainSubstring, "Error: open ./test_data/bad_configs/no_read_permissions/.butler.locked.yaml: permission denied")
 	})
@@ -110,7 +110,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs/no_read_permissions/.butler.base.yaml"})
 		Execute()
 
-		_, err := os.Stat("./butler_results.json")
+		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldContainSubstring, "Error: open test_data/bad_configs/no_read_permissions/.butler.ignore.yaml: permission denied")
 	})
@@ -122,7 +122,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs/.butler.base.yaml"})
 		Execute()
 
-		_, err := os.Stat("./butler_results.json")
+		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldContainSubstring, "cannot unmarshal !!map into []string")
 	})
@@ -138,7 +138,7 @@ func Test_RunWithErr(t *testing.T) {
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) { return nil, errors.New("error getting git branch") }
 		Execute()
 
-		_, err := os.Stat("./butler_results.json")
+		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldContainSubstring, "error getting git branch")
 	})
@@ -154,7 +154,7 @@ func Test_RunWithErr(t *testing.T) {
 		execLookPathStub = func(executable string) (string, error) { return "", errors.New("git executable not found") }
 		Execute()
 
-		_, err := os.Stat("./butler_results.json")
+		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldContainSubstring, "git executable not found")
 	})
