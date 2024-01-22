@@ -1,5 +1,4 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
 
-# This file does not have read permissions and is used to test when reading a file fails in Butler.
-# Do not assign read permissions to this file.
+# File used to test when Butler doesn't have read permissions.
