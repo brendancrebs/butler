@@ -91,6 +91,30 @@ func Test_RunWithErr(t *testing.T) {
 		So(stderr.String(), ShouldContainSubstring, "Error: stat ./test_data/test_helpers/invalid.butler.bad: no such file or directory")
 	})
 
+	Convey("config parse fails from inability to read file", t, func() {
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs/no_read_permissions/.butler.locked.yaml"})
+		Execute()
+
+		_, err := os.Stat("./butler_results.json")
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldContainSubstring, "Error: open ./test_data/bad_configs/no_read_permissions/.butler.locked.yaml: permission denied")
+	})
+
+	Convey(".butler.ignore parse fails from inability to read file", t, func() {
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs/no_read_permissions/.butler.base.yaml"})
+		Execute()
+
+		_, err := os.Stat("./butler_results.json")
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldContainSubstring, "Error: open test_data/bad_configs/no_read_permissions/.butler.ignore.yaml: permission denied")
+	})
+
 	Convey(".butler.ignore parse fails due to bad syntax", t, func() {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
@@ -100,7 +124,7 @@ func Test_RunWithErr(t *testing.T) {
 
 		_, err := os.Stat("./butler_results.json")
 		So(err, ShouldBeNil)
-		So(stderr.String(), ShouldContainSubstring, "Error: Butler ignore parse error: yaml: unmarshal errors")
+		So(stderr.String(), ShouldContainSubstring, "cannot unmarshal !!map into []string")
 	})
 
 	Convey("Butler setup fails when git fails", t, func() {

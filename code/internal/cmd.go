@@ -82,13 +82,9 @@ func run(cmd *cobra.Command, args []string) (err error) {
 	}
 	config.applyFlagsToConfig(cmd, flags)
 
-	ignorePaths, err := loadButlerIgnore(config)
-	if err != nil {
+	if err = config.LoadButlerIgnore(); err != nil {
 		return
 	}
-
-	config.Allowed = concatSlices(ignorePaths.Allowed, config.Allowed)
-	config.Blocked = concatSlices(ignorePaths.Blocked, config.Blocked)
 
 	fmt.Fprintln(cmd.OutOrStdout(), config)
 

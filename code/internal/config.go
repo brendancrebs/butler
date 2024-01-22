@@ -90,10 +90,10 @@ func (bc *ButlerConfig) String() string {
 	%s>>>\n\n`, configPath, string(configPretty))
 }
 
-func loadButlerIgnore(bc *ButlerConfig) (paths *ButlerPaths, err error) {
+func (bc *ButlerConfig) LoadButlerIgnore() (err error) {
 	ignorePath := path.Join(bc.WorkspaceRoot, ignoreName)
 	if _, err := os.Stat(ignorePath); err != nil {
-		return nil, nil
+		return nil
 	}
 
 	content, err := os.ReadFile(ignorePath)
@@ -101,7 +101,12 @@ func loadButlerIgnore(bc *ButlerConfig) (paths *ButlerPaths, err error) {
 		return
 	}
 
+	paths := &ButlerPaths{}
 	err = yaml.Unmarshal(content, &paths)
+
+	bc.Allowed = concatSlices(paths.Allowed, bc.Allowed)
+	bc.Blocked = concatSlices(paths.Blocked, bc.Blocked)
+
 	return
 }
 

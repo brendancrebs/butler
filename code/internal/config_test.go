@@ -57,31 +57,34 @@ func Test_loadButlerIgnore(t *testing.T) {
 		testConfig := &ButlerConfig{
 			WorkspaceRoot: "./test_data/test_helpers",
 		}
-		expected := &ButlerPaths{
-			Allowed: []string{"good_path"},
-			Blocked: []string{"bad_path"},
+		expected := &ButlerConfig{
+			Allowed:       []string{"good_path"},
+			Blocked:       []string{"bad_path"},
+			WorkspaceRoot: "./test_data/test_helpers",
 		}
-		paths, err := loadButlerIgnore(testConfig)
+		err := testConfig.LoadButlerIgnore()
 
 		So(err, ShouldBeNil)
-		So(paths, ShouldResemble, expected)
+		So(testConfig, ShouldResemble, expected)
 	})
 	Convey("Nothing returned if no .butler.ignore file is found.", t, func() {
 		testConfig := &ButlerConfig{
 			WorkspaceRoot: "/",
 		}
-		paths, err := loadButlerIgnore(testConfig)
+		err := testConfig.LoadButlerIgnore()
 
 		So(err, ShouldBeNil)
-		So(paths, ShouldBeNil)
+		So(testConfig.Allowed, ShouldBeNil)
+		So(testConfig.Blocked, ShouldBeNil)
 	})
 	Convey("Failure to parse .butler.ignore.", t, func() {
 		testConfig := &ButlerConfig{
 			WorkspaceRoot: "./test_data/bad_configs",
 		}
-		paths, err := loadButlerIgnore(testConfig)
+		err := testConfig.LoadButlerIgnore()
 
 		So(err, ShouldNotBeNil)
-		So(paths, ShouldBeNil)
+		So(testConfig.Allowed, ShouldEqual, []string{"good_path"})
+		So(testConfig.Blocked, ShouldBeNil)
 	})
 }
