@@ -35,8 +35,12 @@ func getCommand() *cobra.Command {
 }
 
 var (
-	cmd              = getCommand()
-	flags            = &ButlerConfig{}
+	cmd   = getCommand()
+	flags = &ButlerConfig{
+		Paths: &ButlerPaths{},
+		Git:   &GitConfigurations{},
+		Task:  &TaskConfigurations{},
+	}
 	execOutputStub   = func(cmd *exec.Cmd) ([]byte, error) { return cmd.Output() }
 	execLookPathStub = func(executable string) (string, error) { return exec.LookPath(executable) }
 	configPath       string
@@ -44,34 +48,32 @@ var (
 
 // Execute is the entrypoint into the Butler
 func Execute() {
-	// Set Min/Max thread count for VITest Environment Variables to prevent timeouts from resource hogging.
-	os.Setenv("VITEST_MIN_THREADS", "1")
-	os.Setenv("VITEST_MAX_THREADS", "1")
-
 	// all errors are handled internal to this call.
 	_ = cmd.Execute()
 }
 
 func parseFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&configPath, "cfg", "/workspaces/butler/.butler.base.yaml", "Path to config file.")
-	cmd.PersistentFlags().BoolVarP(&flags.ShouldRunAll, "all", "a", false, "Runs all tasks regardless of diff.")
+	cmd.PersistentFlags().StringVarP(&flags.Task.Coverage, "coverage", "c", "0",
+		"the percentage of code coverage that is acceptable for tests to pass.")
+	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldRunAll, "all", "a", false, "Runs all tasks regardless of diff.")
 
-	cmd.PersistentFlags().BoolVarP(&flags.ShouldLint, "lint", "l", false, "Enables linting")
+	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldLint, "lint", "l", false, "Enables linting")
 
-	cmd.PersistentFlags().BoolVarP(&flags.ShouldTest, "test", "t", false, "Enables testing")
+	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldTest, "test", "t", false, "Enables testing")
 
-	cmd.PersistentFlags().BoolVarP(&flags.ShouldBuild, "build", "b", false, "Enables building")
+	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldBuild, "build", "b", false, "Enables building")
 
-	cmd.PersistentFlags().BoolVarP(&flags.ShouldPublish, "publish", "p", false,
+	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldPublish, "publish", "p", false,
 		"Enables publishing.  Publishing also requires --publish-branch and --build-id.")
 
-	cmd.PersistentFlags().BoolVarP(&flags.GitRepo, "git-repository", "g", false,
+	cmd.PersistentFlags().BoolVarP(&flags.Git.GitRepo, "git-repository", "g", false,
 		"sets whether the repository is a git repository or not.")
 
-	cmd.PersistentFlags().StringVar(&flags.PublishBranch, "publish-branch", branchNameEnv,
+	cmd.PersistentFlags().StringVar(&flags.Git.PublishBranch, "publish-branch", envBranchName,
 		"Branch when we will publish or diff to, based on equality to current branch name.")
 
-	cmd.PersistentFlags().StringVar(&flags.WorkspaceRoot, "workspace-root", "/workspaces/butler",
+	cmd.PersistentFlags().StringVar(&flags.Paths.WorkspaceRoot, "workspace-root", "/workspaces/butler",
 		"The root of the repository where Butler will start searching.")
 }
 
@@ -100,5 +102,5 @@ func run(cmd *cobra.Command, args []string) (err error) {
 // For now this just prints the config to Butler results since no tasks are being created.
 func publishResults(bc *ButlerConfig) {
 	resultBytes, _ := json.MarshalIndent(bc, "", "\t")
-	_ = os.WriteFile(bc.ResultsFilePath, resultBytes, 0o600)
+	_ = os.WriteFile(bc.Paths.ResultsFilePath, resultBytes, 0o600)
 }

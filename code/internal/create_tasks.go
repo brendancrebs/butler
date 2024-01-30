@@ -6,11 +6,9 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -18,10 +16,10 @@ import (
 
 // This function will return a queue populated with tasks
 func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
-	allPaths := getFilePaths([]string{bc.WorkspaceRoot}, bc.Allowed, bc.Blocked, true)
+	allPaths := getFilePaths([]string{bc.Paths.WorkspaceRoot}, bc.Paths.AllowedPaths, bc.Paths.BlockedPaths, true)
 
-	if bc.GitRepo && !bc.ShouldRunAll {
-		allDirtyPaths, err := getDirtyPaths(bc.PublishBranch)
+	if bc.Git.GitRepo && !bc.Task.ShouldRunAll {
+		allDirtyPaths, err := getDirtyPaths(bc.Git.PublishBranch)
 		if err != nil {
 			return err
 		}
@@ -31,7 +29,7 @@ func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
 			return err
 		}
 	} else {
-		bc.ShouldRunAll = true
+		bc.Task.ShouldRunAll = true
 	}
 
 	fmt.Printf("\nallPaths: %v\n\n", allPaths)
@@ -63,12 +61,9 @@ func shouldRunAll(bc *ButlerConfig, allDirtyPaths, dirtyFolders []string) (err e
 		return
 	}
 
-	bc.ShouldRunAll = strings.EqualFold(getEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
-	bc.ShouldPublish = currentBranch == bc.PublishBranch
-
-	criticalFiles, criticalFolders, err := separateCriticalPaths(bc.WorkspaceRoot, bc.CriticalPaths)
-	bc.ShouldRunAll = bc.ShouldRunAll || criticalFileChanged(allDirtyPaths, criticalFiles)
-	bc.ShouldRunAll = bc.ShouldRunAll || criticalFolderChanged(dirtyFolders, criticalFolders)
+	bc.Task.ShouldRunAll = strings.EqualFold(getEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.Git.PublishBranch
+	bc.Task.ShouldPublish = currentBranch == bc.Git.PublishBranch
+	bc.Task.ShouldRunAll = bc.Task.ShouldRunAll || criticalPathChanged(allDirtyPaths, bc.Paths.CriticalPaths)
 
 	return
 }
@@ -104,7 +99,6 @@ func getFilePaths(dirs, allowed, blocked []string, shouldRecurse bool) []string 
 		paths = recurseFilepaths(paths, allowed, blocked, base, shouldRecurse)
 	}
 
-	sort.Strings(paths)
 	return paths
 }
 
@@ -114,7 +108,7 @@ func recurseFilepaths(paths, allowed, blocked []string, path string, shouldRecur
 	fileInfos, _ := os.ReadDir(path)
 	for _, fi := range fileInfos {
 		path := filepath.Join(path, fi.Name())
-		if !allowedAndNotBlocked(path, allowed, blocked) {
+		if !isAllowed(path, allowed, blocked) {
 			continue
 		}
 		if !fi.IsDir() {
@@ -126,13 +120,17 @@ func recurseFilepaths(paths, allowed, blocked []string, path string, shouldRecur
 	return paths
 }
 
-func allowedAndNotBlocked(path string, allowed, blocked []string) bool {
+func isAllowed(path string, allowed, blocked []string) bool {
 	isAllowed := false
 	for _, key := range allowed {
 		if strings.Contains(path, key) {
 			isAllowed = true
 			break
 		}
+	}
+
+	if !isAllowed {
+		return false
 	}
 
 	isBlocked := false
@@ -143,7 +141,7 @@ func allowedAndNotBlocked(path string, allowed, blocked []string) bool {
 		}
 	}
 
-	return isAllowed && !isBlocked
+	return !isBlocked
 }
 
 // getDirtyPaths calls 'git diff --name-only {branch}' if branch is not blank, or
@@ -164,7 +162,7 @@ func getDirtyPaths(branch string) ([]string, error) {
 		cmd.Args = append(cmd.Args, branch)
 	}
 
-	output, err := cmd.Output()
+	output, err := execOutputStub(cmd)
 
 	return getLines(output, []byte{'\n'}), err
 }
@@ -172,58 +170,23 @@ func getDirtyPaths(branch string) ([]string, error) {
 // getLines splits on the splitOn slice, converts each grouping to a string and trims space from it.
 // Returns the set of converted lines.
 func getLines(input, splitOn []byte) (lines []string) {
-	lines = make([]string, 0)
 	split := bytes.Split(input, splitOn)
+	lines = make([]string, len(split))
 	for _, lineBytes := range split {
 		line := bytes.TrimSpace(lineBytes)
 		if len(line) > 0 {
 			lines = append(lines, string(line))
 		}
 	}
-	sort.Strings(lines)
 	return
 }
 
-// separates the files from the folders in the criticalPaths array
-func separateCriticalPaths(workspaceRoot string, criticalPaths []string) (criticalFiles, criticalFolders []string, err error) {
-	var fi fs.FileInfo
+func criticalPathChanged(dirtyPaths, criticalPaths []string) (result bool) {
 	for _, path := range criticalPaths {
-		path = filepath.Join(workspaceRoot, path)
-		fi, err = os.Stat(path)
-		if err != nil {
-			break
-		}
-
-		switch mode := fi.Mode(); {
-		case mode.IsDir():
-			criticalFolders = append(criticalFolders, path)
-		case mode.IsRegular():
-			criticalFiles = append(criticalFiles, path)
-		}
-	}
-	return
-}
-
-// determines if a critical file has been changed
-func criticalFileChanged(dirtyPaths []string, criticalFiles []string) (result bool) {
-	for _, file := range criticalFiles {
-		for _, dirtyFile := range dirtyPaths {
-			if dirtyFile == file {
+		for _, dirtyPath := range dirtyPaths {
+			if dirtyPath == path || strings.HasPrefix(dirtyPath, path) {
 				result = true
 				return
-			}
-		}
-	}
-	return
-}
-
-// determines if a dirty folder is a critical folder or a child of a critical folder.
-func criticalFolderChanged(dirtyFolders []string, criticalFolders []string) (result bool) {
-	for _, folder := range criticalFolders {
-		for _, dirtyFolder := range dirtyFolders {
-			if strings.HasPrefix(dirtyFolder, folder) {
-				result = true
-				break
 			}
 		}
 	}
@@ -238,15 +201,10 @@ func getUniqueFolders(paths []string) []string {
 		folderMap[path] = true
 	}
 
-	return getSortedKeys(folderMap)
-}
-
-// getSortedKeys returns the keys sorted in ascending order.
-func getSortedKeys(mapStringBool map[string]bool) []string {
-	keys := make([]string, len(mapStringBool))
-	for key := range mapStringBool {
+	keys := make([]string, len(folderMap))
+	for key := range folderMap {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+
 	return keys
 }

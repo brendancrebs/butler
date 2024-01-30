@@ -16,58 +16,64 @@ import (
 )
 
 const (
-	BaseConfigName    = ".butler.base.yaml"
-	ignoreName        = ".butler.ignore.yaml"
+	configFileName    = ".butler.base.yaml"
+	ignoreFileName    = ".butler.ignore.yaml"
 	gitCommand        = "git"
 	butlerResultsPath = "./butler_results.json"
+	defaultCoverage   = "0"
 )
 
 var (
-	shouldPublishEnv, _ = strconv.ParseBool(getEnvOrDefault(envPublish, "false"))
-	branchNameEnv       = strings.TrimSpace(getEnvOrDefault(envBranch, ""))
+	envShouldPublish, _ = strconv.ParseBool(getEnvOrDefault(envPublish, "false"))
+	envBranchName       = strings.TrimSpace(getEnvOrDefault(envBranch, ""))
 )
 
 // ButlerPaths specifies the allowed and blocked paths within the .butler.ignore.yaml.
 type ButlerPaths struct {
-	Allowed []string `yaml:"allowed-paths,omitempty"`
-	Blocked []string `yaml:"blocked-paths,omitempty"`
+	AllowedPaths    []string `yaml:"allowed-paths,omitempty"`
+	BlockedPaths    []string `yaml:"blocked-paths,omitempty"`
+	CriticalPaths   []string `yaml:"critical-paths,omitempty"`
+	WorkspaceRoot   string   `yaml:"workspace-root,omitempty"`
+	ResultsFilePath string   `yaml:"results-file-path,omitempty"`
+}
+
+type GitConfigurations struct {
+	PublishBranch string `yaml:"publish-branch,omitempty"`
+	GitRepo       bool   `yaml:"git-repository,omitempty"`
+}
+
+type TaskConfigurations struct {
+	Coverage      string `yaml:"coverage,omitempty"`
+	ShouldRunAll  bool   `yaml:"should-run-all,omitempty"`
+	ShouldLint    bool   `yaml:"should-lint,omitempty"`
+	ShouldTest    bool   `yaml:"should-test,omitempty"`
+	ShouldBuild   bool   `yaml:"should-build,omitempty"`
+	ShouldPublish bool   `yaml:"should-publish,omitempty"`
 }
 
 // ButlerConfig specifies the Butler configuration options.
 type ButlerConfig struct {
-	Allowed         []string `yaml:"allowed-paths,omitempty"`
-	Blocked         []string `yaml:"blocked-paths,omitempty"`
-	CriticalPaths   []string `yaml:"critical-paths,omitempty"`
-	PublishBranch   string   `yaml:"publish-branch,omitempty"`
-	ResultsFilePath string   `yaml:"results-file-path,omitempty"`
-	WorkspaceRoot   string   `yaml:"workspace-root,omitempty"`
-	GitRepo         bool     `yaml:"git-repository,omitempty"`
-	ShouldRunAll    bool     `yaml:"should-run-all,omitempty"`
-	ShouldLint      bool     `yaml:"should-lint,omitempty"`
-	ShouldTest      bool     `yaml:"should-test,omitempty"`
-	ShouldBuild     bool     `yaml:"should-build,omitempty"`
-	ShouldPublish   bool     `yaml:"should-publish,omitempty"`
+	Paths *ButlerPaths        `yaml:"paths,omitempty"`
+	Git   *GitConfigurations  `yaml:"git,omitempty"`
+	Task  *TaskConfigurations `yaml:"tasks,omitempty"`
 }
 
 func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConfig) {
-	bc.PublishBranch = useFlagIfChangedString(bc.PublishBranch, flags.PublishBranch,
+	bc.Git.PublishBranch = useFlagIfChanged(bc.Git.PublishBranch, flags.Git.PublishBranch,
 		cmd.Flags().Changed("publish-branch"))
-	bc.WorkspaceRoot = useFlagIfChangedString(bc.WorkspaceRoot, flags.WorkspaceRoot,
+	bc.Paths.WorkspaceRoot = useFlagIfChanged(bc.Paths.WorkspaceRoot, flags.Paths.WorkspaceRoot,
 		cmd.Flags().Changed("workspace-root"))
-	bc.ShouldRunAll = useFlagIfChangedBool(bc.ShouldRunAll, flags.ShouldRunAll, cmd.Flags().Changed("all"))
-	bc.ShouldBuild = useFlagIfChangedBool(bc.ShouldBuild, flags.ShouldBuild, cmd.Flags().Changed("build"))
-	bc.ShouldLint = useFlagIfChangedBool(bc.ShouldLint, flags.ShouldLint, cmd.Flags().Changed("lint"))
-	bc.ShouldTest = useFlagIfChangedBool(bc.ShouldTest, flags.ShouldTest, cmd.Flags().Changed("test"))
-	bc.ShouldPublish = useFlagIfChangedBool(bc.ShouldPublish, flags.ShouldPublish,
+	bc.Task.Coverage = useFlagIfChanged(bc.Task.Coverage, flags.Task.Coverage, cmd.Flags().Changed("coverage"))
+	bc.Task.ShouldRunAll = useFlagIfChanged(bc.Task.ShouldRunAll, flags.Task.ShouldRunAll, cmd.Flags().Changed("all"))
+	bc.Task.ShouldBuild = useFlagIfChanged(bc.Task.ShouldBuild, flags.Task.ShouldBuild, cmd.Flags().Changed("build"))
+	bc.Task.ShouldLint = useFlagIfChanged(bc.Task.ShouldLint, flags.Task.ShouldLint, cmd.Flags().Changed("lint"))
+	bc.Task.ShouldTest = useFlagIfChanged(bc.Task.ShouldTest, flags.Task.ShouldTest, cmd.Flags().Changed("test"))
+	bc.Task.ShouldPublish = useFlagIfChanged(bc.Task.ShouldPublish, flags.Task.ShouldPublish,
 		cmd.Flags().Changed("publish"))
 }
 
 // loads base Butler config
 func (bc *ButlerConfig) Load(configPath string) (err error) {
-	bc.ShouldPublish = shouldPublishEnv
-	bc.PublishBranch = branchNameEnv
-	bc.ResultsFilePath = butlerResultsPath
-
 	if _, err = os.Stat(configPath); err != nil {
 		return
 	}
@@ -81,6 +87,36 @@ func (bc *ButlerConfig) Load(configPath string) (err error) {
 	return
 }
 
+// Sets defaults for the Butler config by satisfying the go yaml package v2 unmarshaler interface.
+// https://pkg.go.dev/gopkg.in/yaml.v2#Unmarshaler
+func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type defaultConfig ButlerConfig
+	defaults := defaultConfig{
+		Paths: &ButlerPaths{
+			ResultsFilePath: butlerResultsPath,
+		},
+		Git: &GitConfigurations{
+			PublishBranch: envBranchName,
+			GitRepo:       false,
+		},
+		Task: &TaskConfigurations{
+			Coverage:      "0",
+			ShouldRunAll:  false,
+			ShouldLint:    false,
+			ShouldTest:    false,
+			ShouldBuild:   false,
+			ShouldPublish: envShouldPublish,
+		},
+	}
+
+	if err := unmarshal(&defaults); err != nil {
+		return err
+	}
+
+	*bc = ButlerConfig(defaults)
+	return nil
+}
+
 func (bc *ButlerConfig) String() string {
 	configPretty, _ := yaml.Marshal(bc)
 	return fmt.Sprintf(`Butler Configuration:\n
@@ -91,7 +127,7 @@ func (bc *ButlerConfig) String() string {
 }
 
 func (bc *ButlerConfig) LoadButlerIgnore() (err error) {
-	ignorePath := path.Join(bc.WorkspaceRoot, ignoreName)
+	ignorePath := path.Join(bc.Paths.WorkspaceRoot, ignoreFileName)
 	if _, err := os.Stat(ignorePath); err != nil {
 		return nil
 	}
@@ -104,34 +140,44 @@ func (bc *ButlerConfig) LoadButlerIgnore() (err error) {
 	paths := &ButlerPaths{}
 	err = yaml.Unmarshal(content, &paths)
 
-	bc.Allowed = concatSlices(paths.Allowed, bc.Allowed)
-	bc.Blocked = concatSlices(paths.Blocked, bc.Blocked)
+	bc.Paths.AllowedPaths = concatPaths(paths.AllowedPaths, bc.Paths.AllowedPaths)
+	bc.Paths.BlockedPaths = concatPaths(paths.BlockedPaths, bc.Paths.BlockedPaths)
+	bc.Paths.CriticalPaths = concatPaths(paths.CriticalPaths, bc.Paths.CriticalPaths)
 
 	return
 }
 
-// useFlagIfChangedBool returns b if c is true, otherwise a.
-func useFlagIfChangedBool(a, b, c bool) bool {
-	if c {
-		return b
-	}
-	return a
-}
-
-// useFlagIfChangedString returns b if c is true, otherwise a.
-func useFlagIfChangedString(a, b string, c bool) string {
-	if c {
-		return b
-	}
-	return a
-}
-
-// Uses filepath.Clean() to update the allowed/blocked filepath strings to a consistent format.
-func cleanPaths(paths []string) (cleanedPaths []string) {
-	for _, path := range paths {
-		cleanedPath := filepath.Clean(path)
-		cleanedPaths = append(cleanedPaths, cleanedPath)
+// concatenates two slices containing file paths. Each path in the resulting slice will be cleaned
+// with filepath.Clean() and duplicates will be removed.
+func concatPaths(sliceA, sliceB []string) (result []string) {
+	sliceA = append(sliceA, sliceB...)
+	result = sliceA[:0]
+	seen := map[string]bool{}
+	for _, value := range sliceA {
+		cleanedValue := filepath.Clean(value)
+		if seen[cleanedValue] {
+			continue
+		}
+		seen[cleanedValue] = true
+		result = append(result, cleanedValue)
 	}
 
 	return
+}
+
+// returns the value of the given environment variable if it has been set. Otherwise return the
+// default.
+func getEnvOrDefault(name, defaultValue string) string {
+	if v := os.Getenv(name); v != "" {
+		return v
+	}
+	return defaultValue
+}
+
+// returns b if c is true, otherwise a.
+func useFlagIfChanged[T any](a, b T, c bool) T {
+	if c {
+		return b
+	}
+	return a
 }

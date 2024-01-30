@@ -10,7 +10,7 @@ spec:
     - name: artifactory-service-account
   containers:
     - name: butler-builder
-      image: hop-docker-dev.artifactory.metro.ad.selinc.com/butler-devcontainer:1.0.0-preview.1
+      image: hop-docker-dev.artifactory.metro.ad.selinc.com/butler-devcontainer:1.0.0-preview.2
       imagePullPolicy: IfNotPresent
       tty: true
       resources:

@@ -1,6 +1,6 @@
 {
   "name": "Butler",
-  "image": "hop-docker-dev.artifactory.metro.ad.selinc.com/butler-devcontainer:1.0.0-preview.1",
+  "image": "hop-docker-dev.artifactory.metro.ad.selinc.com/butler-devcontainer:1.0.0-preview.2",
   "containerUser": "vscode",
   "postCreateCommand": ".devcontainer/scripts/postCreateCommand.sh",
   "init": true,

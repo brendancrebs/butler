@@ -5,7 +5,6 @@
   "image": "hop-docker-dev.artifactory.metro.ad.selinc.com/sel-proxy-ubuntu:jammy-20230126",
   "containerUser": "vscode",
   "containerEnv": {
-    "CGO_ENABLED": "0",
     "GOPRIVATE": "bitbucket.metro.ad.selinc.com/*"
   },
   "features": {
@@ -31,7 +30,7 @@
       "pnpmVersion": "8.6.2",
       "aliasPnpm": true
     },
-    "hop-docker-dev.artifactory.metro.ad.selinc.com/devcontainers/features/npm-packages:1.0.0-preview.22": {
+    "hop-docker-dev.artifactory.metro.ad.selinc.com/devcontainers/features/npm-packages:1": {
       "packages": "@devcontainers/cli:0.50.2"
     },
     "docker.sel.inc/devcontainers/features/common-utils:2": {

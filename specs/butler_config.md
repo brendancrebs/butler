@@ -25,7 +25,7 @@ be used in the file.
 - Type: string list
 
 - Description: The `allowed-paths` option is a list of file paths/patterns that `Butler` is permitted to look down in order to build tasks.
-`Butler` will only look down paths that are included in the `allowed-paths` field.
+  `Butler` will only look down paths that are included in the `allowed-paths` field.
 
 - Example:
 
@@ -41,7 +41,7 @@ allowed-paths:
 - Type: string list
 
 - Description: The `blocked-paths` option is similar to the `allowed-paths` option. `Blocked-paths` will instead contain a list of
-filepaths that Butler should not look down.
+  filepaths that Butler should not look down.
 
 - Example:
 
@@ -57,9 +57,9 @@ blocked-paths:
 - Type: string list
 
 - Description: `critical-paths` is a list of paths which should trigger a full Butler build if any of them have
-been changed. These paths can either be file or directory paths. For directory paths, if any file has been changed in
-that directory, a full build will be triggered. It is recommended that you add the `.butler.base.yaml` file location to this
-list so that a full build is ran if `Butler's` behavior is altered.
+  been changed. These paths can either be file or directory paths. For directory paths, if any file has been changed in
+  that directory, a full build will be triggered. It is recommended that you add the `.butler.base.yaml` file location to this
+  list so that a full build is ran if `Butler's` behavior is altered.
 
 - Example:
 
@@ -75,7 +75,7 @@ critical-paths:
 - Type: string
 
 - Description: The `Publish-branch` option represent the main development branch for a repository. This will also
-represent the branch Butler will publish from.
+  represent the branch Butler will publish from.
 
 - Example:
 
@@ -88,7 +88,7 @@ publish-branch: "main"
 - Type: string
 
 - Description: `results-file-path` is the path/filename for where a butler results json file should be
-generated. This file name must also be added to the repository `.gitignore` file.
+  generated. This file name must also be added to the repository `.gitignore` file.
 
 - Example:
 
@@ -101,8 +101,8 @@ results-file-path: "./butler_results.json"
 - Type: string
 
 - Description: `workspace-root` is a path that will specify where the root of the repository is in the local
-filesystem. Butler can only observe paths that are children of the `workspace-root` path. Filepaths supplied in other
-fields should only be children of the workspace root.
+  filesystem. Butler can only observe paths that are children of the `workspace-root` path. Filepaths supplied in other
+  fields should only be children of the workspace root.
 
 - Example:
 
@@ -117,8 +117,8 @@ workspace-root: "/workspaces/butler"
 - Default: false
 
 - Description: `git-repository` specifies if Butler is working within a git repository. If this option is true,
-`Butler` will diff the current branch against the `publish-branch` to determine what needs to be built based on what has
-been changed from the main branch. If this option is set to false, a full build will be triggered every time.
+  `Butler` will diff the current branch against the `publish-branch` to determine what needs to be built based on what has
+  been changed from the main branch. If this option is set to false, a full build will be triggered every time.
 
 #### should-run-all
 
@@ -135,7 +135,7 @@ been changed from the main branch. If this option is set to false, a full build 
 - Default: false
 
 - Description: `should-lint` enables linting tasks. NOTE: if this is set to false a full build will still not execute lint
-tasks.
+  tasks.
 
 #### should-test
 

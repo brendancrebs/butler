@@ -7,9 +7,11 @@ package internal
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
+	"reflect"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -41,10 +43,21 @@ func replaceStubs() (undo func()) {
 
 func Test_RunWithErr(t *testing.T) {
 	Convey("Just running the command for outer coverage of Execute", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		gitPath, _ := execLookPathStub(gitCommand)
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			if reflect.DeepEqual(cmd.Args, []string{gitPath, "diff", "--name-only", currBranch}) {
+				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
+				return gitDiffReturn, nil
+			}
+			return nil, nil
+		}
 		Execute()
 
 		// Success determined by existence of the results json file.
@@ -135,7 +148,17 @@ func Test_RunWithErr(t *testing.T) {
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
-		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) { return nil, errors.New("error getting git branch") }
+		gitPath, _ := execLookPathStub(gitCommand)
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			if reflect.DeepEqual(cmd.Args, []string{gitPath, "diff", "--name-only", currBranch}) {
+				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
+				return gitDiffReturn, nil
+			}
+			if reflect.DeepEqual(cmd.Args, []string{gitPath, "branch", "--show-current"}) {
+				return nil, errors.New("error getting git branch")
+			}
+			return nil, nil
+		}
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)

@@ -1,24 +1,22 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
 
-publish-branch: "main"
+paths:
+  workspace-root: "/workspaces/butler"
+  results-file-path: "./butler_results.json"
+  critical-paths:
+    - .devcontainer/devcontainer.json
+    - .butler.base.yaml
+    - .butler.ignore.yaml
+    - code
 
-git-repository: true
+git:
+  publish-branch: "main"
+  git-repository: true
 
-should-run-all: false
-
-should-lint: true
-should-test: true
-should-build: false
-should-publish: false
-should-package: false
-
-workspace-root: "/workspaces/butler"
-
-results-file-path: "./butler_results.json"
-
-critical-paths:
-  - .devcontainer/devcontainer.json
-  - .butler.base.yaml
-  - .butler.ignore.yaml
-  - code
+tasks:
+  should-run-all: false
+  should-lint: true
+  should-test: true
+  should-build: false
+  should-publish: false
