@@ -2,7 +2,7 @@
 # SEL Confidential
 
 paths:
-  workspace-root: "./test_data/bad_configs"
+  workspace-root: "./test_data/bad_configs/ignore_dir"
 
 git:
   git-repository: true
