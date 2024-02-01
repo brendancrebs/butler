@@ -48,7 +48,6 @@ var (
 
 // Execute is the entrypoint into the Butler
 func Execute() {
-	fmt.Println("\nTEST-EXECUTE")
 	// all errors are handled internal to this call.
 	_ = cmd.Execute()
 }
