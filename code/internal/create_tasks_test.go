@@ -5,6 +5,7 @@ package internal
 
 import (
 	"errors"
+	"os"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -39,8 +40,12 @@ func Test_getCurrentBranchCoverage(t *testing.T) {
 		undo := replaceStubs()
 		defer undo()
 
+		originalEnvBranch := getEnvOrDefault(envBranch, "")
+		os.Unsetenv(envBranch)
+
 		execLookPathStub = func(executable string) (string, error) { return "", errors.New("git executable not found") }
 		branch, err := getCurrentBranch()
+		os.Setenv(envBranch, originalEnvBranch)
 
 		So(branch, ShouldEqual, "")
 		So(err, ShouldNotBeNil)

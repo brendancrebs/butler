@@ -71,6 +71,10 @@ func shouldRunAll(bc *ButlerConfig, allDirtyPaths, dirtyFolders []string) (err e
 // getCurrentBranch returns the whitespace trimmed result of `git branch --show-current`
 // which should be the branch, or an error.
 func getCurrentBranch() (branch string, err error) {
+	if branch = getEnvOrDefault(envBranch, ""); branch != "" {
+		return
+	}
+
 	path, err := execLookPathStub(gitCommand)
 	if err != nil {
 		return
@@ -82,11 +86,8 @@ func getCurrentBranch() (branch string, err error) {
 	}
 
 	execCmd, err := execOutputStub(cmd)
-	if err != nil {
-		return
-	}
+	branch = strings.TrimSpace(string(execCmd))
 
-	branch = getEnvOrDefault(envBranch, strings.TrimSpace(string(execCmd)))
 	return
 }
 

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -66,13 +67,50 @@ func Test_RunWithErr(t *testing.T) {
 		So(stderr.String(), ShouldEqual, "")
 	})
 
-	Convey("Running command with BUTLER_SHOULD_RUN_ALL env var enabled", t, func() {
-		os.Setenv("BUTLER_SHOULD_RUN_ALL", "true")
+	Convey("Running command with env vars enabled", t, func() {
+		os.Setenv(envRunAll, "true")
+		originalEnvBranch := getEnvOrDefault(envBranch, "")
+		os.Setenv(envBranch, strings.TrimSpace(currBranch))
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		gitPath, _ := execLookPathStub(gitCommand)
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			if reflect.DeepEqual(cmd.Args, []string{gitPath, "diff", "--name-only", currBranch}) {
+				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
+				return gitDiffReturn, nil
+			}
+			return nil, nil
+		}
 		Execute()
+
+		os.Unsetenv(envRunAll)
+		os.Setenv(envBranch, originalEnvBranch)
+
+		_, err := os.Stat(butlerResultsPath)
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldEqual, "")
+	})
+
+	Convey("Running command with no GIT_BRANCH env var", t, func() {
+		originalEnvBranch := getEnvOrDefault(envBranch, "")
+		os.Unsetenv(envBranch)
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		gitPath, _ := execLookPathStub(gitCommand)
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			if reflect.DeepEqual(cmd.Args, []string{gitPath, "branch", "--show-current"}) {
+				gitBranchReturn, _ := json.Marshal(currBranch)
+				return gitBranchReturn, nil
+			}
+			return nil, nil
+		}
+		Execute()
+
+		os.Setenv(envBranch, originalEnvBranch)
 
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
@@ -104,28 +142,28 @@ func Test_RunWithErr(t *testing.T) {
 		So(stderr.String(), ShouldContainSubstring, "Error: stat ./test_data/test_helpers/invalid.butler.bad: no such file or directory")
 	})
 
-	Convey("config parse fails from inability to read file", t, func() {
+	Convey("config parse fails from path being invalid.", t, func() {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs/no_read_permissions/.butler.locked.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs"})
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
-		So(stderr.String(), ShouldContainSubstring, "Error: open ./test_data/bad_configs/no_read_permissions/.butler.locked.yaml: permission denied")
+		So(stderr.String(), ShouldContainSubstring, "Error: read ./test_data/bad_configs: is a directory")
 	})
 
 	Convey(".butler.ignore parse fails from inability to read file", t, func() {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs/no_read_permissions/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs/ignore_dir/.butler.base.yaml"})
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
-		So(stderr.String(), ShouldContainSubstring, "Error: open test_data/bad_configs/no_read_permissions/.butler.ignore.yaml: permission denied")
+		So(stderr.String(), ShouldContainSubstring, "Error: read test_data/bad_configs/ignore_dir/.butler.ignore.yaml: is a directory")
 	})
 
 	Convey(".butler.ignore parse fails due to bad syntax", t, func() {
@@ -144,6 +182,9 @@ func Test_RunWithErr(t *testing.T) {
 		undo := replaceStubs()
 		defer undo()
 
+		originalEnvBranch := getEnvOrDefault(envBranch, "")
+		os.Unsetenv(envBranch)
+
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
@@ -160,6 +201,8 @@ func Test_RunWithErr(t *testing.T) {
 			return nil, nil
 		}
 		Execute()
+
+		os.Setenv(envBranch, originalEnvBranch)
 
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)

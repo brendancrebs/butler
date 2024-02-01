@@ -48,12 +48,13 @@ var (
 
 // Execute is the entrypoint into the Butler
 func Execute() {
+	fmt.Println("\nTEST-EXECUTE")
 	// all errors are handled internal to this call.
 	_ = cmd.Execute()
 }
 
 func parseFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&configPath, "cfg", "/workspaces/butler/.butler.base.yaml", "Path to config file.")
+	cmd.PersistentFlags().StringVar(&configPath, "cfg", ".butler.base.yaml", "Path to config file.")
 	cmd.PersistentFlags().StringVarP(&flags.Task.Coverage, "coverage", "c", "0",
 		"the percentage of code coverage that is acceptable for tests to pass.")
 	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldRunAll, "all", "a", false, "Runs all tasks regardless of diff.")
@@ -73,7 +74,7 @@ func parseFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&flags.Git.PublishBranch, "publish-branch", envBranchName,
 		"Branch when we will publish or diff to, based on equality to current branch name.")
 
-	cmd.PersistentFlags().StringVar(&flags.Paths.WorkspaceRoot, "workspace-root", "/workspaces/butler",
+	cmd.PersistentFlags().StringVar(&flags.Paths.WorkspaceRoot, "workspace-root", ".",
 		"The root of the repository where Butler will start searching.")
 }
 
