@@ -41,8 +41,8 @@ var (
 		Git:   &GitConfigurations{},
 		Task:  &TaskConfigurations{},
 	}
-	execOutputStub   = func(cmd *exec.Cmd) ([]byte, error) { return cmd.Output() }
-	execLookPathStub = func(executable string) (string, error) { return exec.LookPath(executable) }
+	execOutputStub   = (*exec.Cmd).Output
+	execLookPathStub = exec.LookPath
 	configPath       string
 )
 
@@ -78,6 +78,8 @@ func parseFlags(cmd *cobra.Command) {
 }
 
 func run(cmd *cobra.Command, args []string) (err error) {
+	var taskQueue *Queue
+
 	config := &ButlerConfig{}
 	if err = config.Load(configPath); err != nil {
 		return
@@ -90,10 +92,15 @@ func run(cmd *cobra.Command, args []string) (err error) {
 
 	fmt.Fprintln(cmd.OutOrStdout(), config)
 
+	taskQueue, err = GetTasks(config, cmd)
+	if err != nil {
+		return
+	}
+
 	defer publishResults(config)
 
-	if err = ButlerSetup(config, cmd); err != nil {
-		return
+	for _, task := range taskQueue.tasks {
+		fmt.Printf("\ntask: %+v", task)
 	}
 
 	return

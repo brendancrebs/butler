@@ -10,26 +10,54 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
 
+type Queue struct {
+	tasks []*Task
+}
+
+func (q *Queue) Enqueue(task *Task) {
+	q.tasks = append(q.tasks, task)
+}
+
+func (q *Queue) Dequeue() *Task {
+	task := q.tasks[0]
+	q.tasks = q.tasks[1:]
+	return task
+}
+
+func (q *Queue) Size() int {
+	return len(q.tasks)
+}
+
+// Task maintains state and output from various build tasks.
+type Task struct {
+	Name        string   `json:"name"`
+	Language    string   `json:"language"`
+	Path        string   `json:"path"`
+	Logs        string   `json:"logs"`
+	Error       string   `json:"error"`
+	Arguments   []string `json:"arguments"`
+	err         error
+	CmdCreator  func() *exec.Cmd `json:"-"`
+	Run         func() error     `json:"-"`
+	Cmd         *exec.Cmd        `json:"-"`
+	logsBuilder strings.Builder
+	Attempts    int           `json:"attempts"`
+	Retries     int           `json:"-"`
+	Step        BuildStep     `json:"step"`
+	Duration    time.Duration `json:"duration"`
+}
+
 // This function will return a queue populated with tasks
-func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
-	allPaths := getFilePaths([]string{bc.Paths.WorkspaceRoot}, bc.Paths.AllowedPaths, bc.Paths.BlockedPaths, true)
-
-	if bc.Git.GitRepo && !bc.Task.ShouldRunAll {
-		allDirtyPaths, err := getDirtyPaths(bc.Git.PublishBranch)
-		if err != nil {
-			return err
-		}
-		dirtyFolders := getUniqueFolders(allDirtyPaths)
-
-		if err = shouldRunAll(bc, allDirtyPaths, dirtyFolders); err != nil {
-			return err
-		}
-	} else {
-		bc.Task.ShouldRunAll = true
+func GetTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error) {
+	taskQueue = &Queue{tasks: make([]*Task, 0)}
+	allPaths, dirtyFolders, err := butlerSetup(bc)
+	if err != nil {
+		return
 	}
 
 	fmt.Printf("\nallPaths: %v\n\n", allPaths)
@@ -37,19 +65,48 @@ func ButlerSetup(bc *ButlerConfig, cmd *cobra.Command) (err error) {
 	// Next steps:
 
 	// 1. run preliminary commands
+	if err = preliminaryCommands(bc.Languages); err != nil {
+		return
+	}
 
 	// 2. create workspace array for each language
+	if err = CreateWorkspaces(bc, allPaths); err != nil {
+		return
+	}
 
 	// 3. get internal dependencies for each language
 
 	// 4. get external dependencies for each language
 
 	// 5. determine dirty workspaces
+	for _, lang := range bc.Languages {
+		evaluateDirtiness(lang.Workspaces, dirtyFolders)
+	}
 
 	// 6. create tasks for each language
+	if err = PopulateTaskQueue(bc, taskQueue, cmd); err != nil {
+		return
+	}
 
-	// 7. Return the populated task queue
+	return
+}
 
+func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, err error) {
+	allPaths = getFilePaths([]string{bc.Paths.WorkspaceRoot}, bc.Paths.AllowedPaths, bc.Paths.BlockedPaths, true)
+
+	if bc.Git.GitRepo && !bc.Task.ShouldRunAll {
+		allDirtyPaths, err := getDirtyPaths(bc.Git.PublishBranch)
+		if err != nil {
+			return nil, nil, err
+		}
+		dirtyFolders = getUniqueFolders(allDirtyPaths)
+
+		if err = shouldRunAll(bc, allDirtyPaths, dirtyFolders); err != nil {
+			return nil, nil, err
+		}
+	} else {
+		bc.Task.ShouldRunAll = true
+	}
 	return
 }
 
@@ -208,4 +265,65 @@ func getUniqueFolders(paths []string) []string {
 	}
 
 	return keys
+}
+
+func evaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
+	workspaceIsDirty := make(map[string]bool)
+	mapDFs := convertToStringBoolMap(dirtyFolders)
+
+	// hierarchical .. not sure this is the case since a go package does not
+	// need to import something that is under it - e.g. don't rebuild all of
+	// a library directory because of one change.
+	for _, ws := range workspaces {
+		for _, path := range dirtyFolders {
+			// path contains the relative path info without a leading "./". The Workspace.Location
+			// however can be prepended with "./", so strip it when found.
+			if !strings.Contains(path, strings.TrimPrefix(ws.Location, "./")) {
+				continue
+			}
+			ws.IsDirty = true
+			workspaceIsDirty[ws.Location] = true
+			break
+		}
+	}
+
+	madeAdditionalWorkspacesDirty := true
+	for madeAdditionalWorkspacesDirty {
+		madeAdditionalWorkspacesDirty = false
+		for _, ws := range workspaces {
+			for _, dep := range ws.WorkspaceDependencies {
+				initialState := ws.IsDirty
+				ws.IsDirty = ws.IsDirty || mapDFs[dep] || workspaceIsDirty[dep]
+				madeAdditionalWorkspacesDirty = madeAdditionalWorkspacesDirty || (initialState != ws.IsDirty)
+			}
+		}
+	}
+}
+
+// convertToStringBoolMap converts a []string to a map[string]bool.
+func convertToStringBoolMap(values []string) map[string]bool {
+	valueMap := make(map[string]bool)
+	for _, value := range values {
+		valueMap[value] = true
+	}
+	return valueMap
+}
+
+func (t *Task) String() string {
+	const (
+		maxPathLength = 60
+	)
+	path := t.Path
+	path = trimFromLeftToLength(path, maxPathLength)
+
+	path = fmt.Sprintf("%-*s", maxPathLength, path)
+
+	return fmt.Sprintf("%-15s%-8s %s", t.Step, t.Language, path)
+}
+
+func trimFromLeftToLength(value string, maxLength int) string {
+	if len(value) > maxLength {
+		value = "..." + value[len(value)-(maxLength-3):]
+	}
+	return value
 }

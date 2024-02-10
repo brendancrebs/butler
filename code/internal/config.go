@@ -53,9 +53,10 @@ type TaskConfigurations struct {
 
 // ButlerConfig specifies the Butler configuration options.
 type ButlerConfig struct {
-	Paths *ButlerPaths        `yaml:"paths,omitempty"`
-	Git   *GitConfigurations  `yaml:"git,omitempty"`
-	Task  *TaskConfigurations `yaml:"tasks,omitempty"`
+	Paths     *ButlerPaths        `yaml:"paths,omitempty"`
+	Git       *GitConfigurations  `yaml:"git,omitempty"`
+	Task      *TaskConfigurations `yaml:"tasks,omitempty"`
+	Languages []*Language         `yaml:"languages,omitempty"`
 }
 
 func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConfig) {
