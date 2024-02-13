@@ -32,12 +32,8 @@ func replaceStubs() (undo func()) {
 	originalExecOutputStub := (*exec.Cmd).Output
 	execOutputStub = func(cmd *exec.Cmd) ([]byte, error) { return cmd.Output() }
 
-	originalExecLookPathStub := exec.LookPath
-	execLookPathStub = func(executable string) (string, error) { return exec.LookPath(executable) }
-
 	return func() {
 		execOutputStub = originalExecOutputStub
-		execLookPathStub = originalExecLookPathStub
 		_ = os.Remove(butlerResultsPath)
 	}
 }
@@ -51,9 +47,8 @@ func Test_RunWithErr(t *testing.T) {
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
-		gitPath, _ := execLookPathStub(gitCommand)
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
-			if reflect.DeepEqual(cmd.Args, []string{gitPath, "diff", "--name-only", currBranch}) {
+			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
 				return gitDiffReturn, nil
 			}
@@ -75,9 +70,8 @@ func Test_RunWithErr(t *testing.T) {
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
 		cmd.SetArgs([]string{"--cfg", "./test_data/test_helpers/.butler.base.yaml"})
-		gitPath, _ := execLookPathStub(gitCommand)
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
-			if reflect.DeepEqual(cmd.Args, []string{gitPath, "diff", "--name-only", currBranch}) {
+			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
 				return gitDiffReturn, nil
 			}
@@ -100,9 +94,8 @@ func Test_RunWithErr(t *testing.T) {
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
 		cmd.SetArgs([]string{"--cfg", "./test_data/test_helpers/.butler.base.yaml"})
-		gitPath, _ := execLookPathStub(gitCommand)
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
-			if reflect.DeepEqual(cmd.Args, []string{gitPath, "branch", "--show-current"}) {
+			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "branch", "--show-current"}) {
 				gitBranchReturn, _ := json.Marshal(currBranch)
 				return gitBranchReturn, nil
 			}
@@ -189,13 +182,12 @@ func Test_RunWithErr(t *testing.T) {
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
-		gitPath, _ := execLookPathStub(gitCommand)
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
-			if reflect.DeepEqual(cmd.Args, []string{gitPath, "diff", "--name-only", currBranch}) {
+			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
 				return gitDiffReturn, nil
 			}
-			if reflect.DeepEqual(cmd.Args, []string{gitPath, "branch", "--show-current"}) {
+			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "branch", "--show-current"}) {
 				return nil, errors.New("error getting git branch")
 			}
 			return nil, nil
@@ -207,21 +199,5 @@ func Test_RunWithErr(t *testing.T) {
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldContainSubstring, "error getting git branch")
-	})
-
-	Convey("Butler setup fails when git not installed", t, func() {
-		undo := replaceStubs()
-		defer undo()
-
-		cmd = getCommand()
-		stderr := new(bytes.Buffer)
-		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
-		execLookPathStub = func(executable string) (string, error) { return "", errors.New("git executable not found") }
-		Execute()
-
-		_, err := os.Stat(butlerResultsPath)
-		So(err, ShouldBeNil)
-		So(stderr.String(), ShouldContainSubstring, "git executable not found")
 	})
 }

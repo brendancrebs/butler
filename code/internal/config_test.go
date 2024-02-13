@@ -14,6 +14,19 @@ func Test_loadConfig(t *testing.T) {
 		temp := configPath
 		configPath = "./test_data/test_helpers/.butler.base.yaml"
 
+		expectedLanguage := &Language{
+			Name:          "golang",
+			FileExtension: ".go",
+			Commands: &Commands{
+				LintCommand:        "echo go lint command",
+				TestCommand:        "echo go test command",
+				BuildCommand:       "echo go build command",
+				PublishCommand:     "echo go publish command",
+				ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go",
+				SetUpCommands:      []string{"echo go test"},
+			},
+		}
+
 		config := &ButlerConfig{}
 		expected := &ButlerConfig{
 			Paths: &ButlerPaths{
@@ -34,6 +47,7 @@ func Test_loadConfig(t *testing.T) {
 				ShouldPublish: false,
 				ShouldRunAll:  false,
 			},
+			Languages: []*Language{expectedLanguage},
 		}
 
 		err := config.Load(configPath)

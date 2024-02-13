@@ -53,13 +53,10 @@ func getMatchingDirs(dirs []string, pattern string) (matches map[string]bool) {
 
 // goGetStdLibs returns the list of go std libs for the current go executable.
 func goGetStdLibs(goPath string) ([]string, error) {
-	cmd := &exec.Cmd{
-		Path: goPath,
-		Args: []string{goPath, "list", "std"},
-	}
+	cmd := exec.Command(goPath, "list", "std")
 
-	b, err := cmd.Output()
-	s := bufio.NewScanner(bytes.NewBuffer(b))
+	output, err := execOutputStub(cmd)
+	s := bufio.NewScanner(bytes.NewBuffer(output))
 	var results []string
 	for s.Scan() {
 		results = append(results, s.Text())
@@ -98,15 +95,10 @@ func concurrentGetWorkspaces(baseConfig *ButlerConfig, allDirs map[string]bool, 
 // goGetPkgDeps returns the list of go package dependencies for a given package.
 // It returns nothing if the folder is not or does not contains any go files.
 func goGetPkgDeps(goPath, directory string) []string {
-	cmd := &exec.Cmd{
-		Path: goPath,
-		// use go templating to make each entry its own line.
-		// See: https://dave.cheney.net/2014/09/14/go-list-your-swiss-army-knife
-		Args: []string{goPath, "list", "-test", "-f", `{{join .Deps "\n"}}`, directory},
-	}
+	cmd := exec.Command(goPath, "list", "-test", "-f", `{{join .Deps "\n"}}`, directory)
 
-	b, _ := cmd.Output()
-	s := bufio.NewScanner(bytes.NewBuffer(b))
+	output, _ := execOutputStub(cmd)
+	s := bufio.NewScanner(bytes.NewBuffer(output))
 
 	var results []string
 	for s.Scan() {

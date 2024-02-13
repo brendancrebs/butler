@@ -14,12 +14,8 @@ var languageConfigPath = getRootDir()
 
 type LanguageMethod struct {
 	Name                     string
-	WorkspaceMethod          string
+	InternalDependencyMethod string
 	ExternalDependencyMethod string
-	LintMethod               string
-	TestMethod               string
-	BuildMethod              string
-	PublishMethod            string
 	Aliases                  []string
 }
 

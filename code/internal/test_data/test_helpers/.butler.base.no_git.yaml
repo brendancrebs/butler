@@ -21,3 +21,15 @@ tasks:
   should-test: true
   should-build: false
   should-publish: false
+
+languages:
+  - Name: "golang"
+    FileExtension: ".go"
+    Commands: 
+      LintCommand: "echo go lint command"
+      TestCommand: "echo go test command"
+      BuildCommand: "echo go build command"
+      PublishCommand: "echo go publish command"
+      ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
+      SetUpCommands:
+          - "echo go test"

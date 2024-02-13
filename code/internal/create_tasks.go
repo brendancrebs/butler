@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -33,25 +32,6 @@ func (q *Queue) Size() int {
 	return len(q.tasks)
 }
 
-// Task maintains state and output from various build tasks.
-type Task struct {
-	Name        string   `json:"name"`
-	Language    string   `json:"language"`
-	Path        string   `json:"path"`
-	Logs        string   `json:"logs"`
-	Error       string   `json:"error"`
-	Arguments   []string `json:"arguments"`
-	err         error
-	CmdCreator  func() *exec.Cmd `json:"-"`
-	Run         func() error     `json:"-"`
-	Cmd         *exec.Cmd        `json:"-"`
-	logsBuilder strings.Builder
-	Attempts    int           `json:"attempts"`
-	Retries     int           `json:"-"`
-	Step        BuildStep     `json:"step"`
-	Duration    time.Duration `json:"duration"`
-}
-
 // This function will return a queue populated with tasks
 func GetTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error) {
 	taskQueue = &Queue{tasks: make([]*Task, 0)}
@@ -62,28 +42,18 @@ func GetTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 
 	fmt.Printf("\nallPaths: %v\n\n", allPaths)
 
-	// Next steps:
-
-	// 1. run preliminary commands
 	if err = preliminaryCommands(bc.Languages); err != nil {
 		return
 	}
 
-	// 2. create workspace array for each language
 	if err = CreateWorkspaces(bc, allPaths); err != nil {
 		return
 	}
 
-	// 3. get internal dependencies for each language
-
-	// 4. get external dependencies for each language
-
-	// 5. determine dirty workspaces
 	for _, lang := range bc.Languages {
 		evaluateDirtiness(lang.Workspaces, dirtyFolders)
 	}
 
-	// 6. create tasks for each language
 	if err = PopulateTaskQueue(bc, taskQueue, cmd); err != nil {
 		return
 	}
@@ -132,18 +102,10 @@ func getCurrentBranch() (branch string, err error) {
 		return
 	}
 
-	path, err := execLookPathStub(gitCommand)
-	if err != nil {
-		return
-	}
+	cmd := exec.Command(gitCommand, "branch", "--show-current")
 
-	cmd := &exec.Cmd{
-		Path: path,
-		Args: []string{path, "branch", "--show-current"},
-	}
-
-	execCmd, err := execOutputStub(cmd)
-	branch = strings.TrimSpace(string(execCmd))
+	output, err := execOutputStub(cmd)
+	branch = strings.TrimSpace(string(output))
 
 	return
 }
@@ -207,18 +169,13 @@ func isAllowed(path string, allowed, blocked []string) bool {
 // changed.
 func getDirtyPaths(branch string) ([]string, error) {
 	branch = strings.TrimSpace(branch)
-	path, err := execLookPathStub(gitCommand)
-	if err != nil {
-		return nil, err
+
+	args := []string{gitCommand, "diff", "--name-only"}
+	if branch != "" {
+		args = append(args, branch)
 	}
 
-	cmd := &exec.Cmd{
-		Path: path,
-		Args: []string{path, "diff", "--name-only"},
-	}
-	if branch != "" {
-		cmd.Args = append(cmd.Args, branch)
-	}
+	cmd := exec.Command(args[0], args[1:]...)
 
 	output, err := execOutputStub(cmd)
 
@@ -271,13 +228,8 @@ func evaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
 	workspaceIsDirty := make(map[string]bool)
 	mapDFs := convertToStringBoolMap(dirtyFolders)
 
-	// hierarchical .. not sure this is the case since a go package does not
-	// need to import something that is under it - e.g. don't rebuild all of
-	// a library directory because of one change.
 	for _, ws := range workspaces {
 		for _, path := range dirtyFolders {
-			// path contains the relative path info without a leading "./". The Workspace.Location
-			// however can be prepended with "./", so strip it when found.
 			if !strings.Contains(path, strings.TrimPrefix(ws.Location, "./")) {
 				continue
 			}
@@ -307,23 +259,4 @@ func convertToStringBoolMap(values []string) map[string]bool {
 		valueMap[value] = true
 	}
 	return valueMap
-}
-
-func (t *Task) String() string {
-	const (
-		maxPathLength = 60
-	)
-	path := t.Path
-	path = trimFromLeftToLength(path, maxPathLength)
-
-	path = fmt.Sprintf("%-*s", maxPathLength, path)
-
-	return fmt.Sprintf("%-15s%-8s %s", t.Step, t.Language, path)
-}
-
-func trimFromLeftToLength(value string, maxLength int) string {
-	if len(value) > maxLength {
-		value = "..." + value[len(value)-(maxLength-3):]
-	}
-	return value
 }

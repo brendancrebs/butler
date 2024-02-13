@@ -41,9 +41,8 @@ var (
 		Git:   &GitConfigurations{},
 		Task:  &TaskConfigurations{},
 	}
-	execOutputStub   = (*exec.Cmd).Output
-	execLookPathStub = exec.LookPath
-	configPath       string
+	execOutputStub = (*exec.Cmd).Output
+	configPath     string
 )
 
 // Execute is the entrypoint into the Butler
