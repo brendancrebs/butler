@@ -24,9 +24,10 @@ tasks:
 languages:
   - Name: "golang"
     FileExtension: ".go"
-    Commands: 
+    DependencyCommands:
+      ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
+    TaskCommands: 
       LintCommand: "/go/bin/golangci-lint run --timeout 5m --allow-parallel-runners --concurrency=1 ."
       TestCommand: "go run /workspaces/butler/user_commands/go_testing_command/go_testing_command.go"
-      ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
       SetUpCommands:
           - "echo go test"

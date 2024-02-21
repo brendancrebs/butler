@@ -12,56 +12,66 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"selinc.com/butler/code/builtin"
+	"selinc.com/butler/code/internal/builtin"
 )
 
 type Language struct {
-	Name                     string       `yaml:"Name,omitempty"`
-	FileExtension            string       `yaml:"FileExtension,omitempty"`
-	PackageManager           string       `yaml:"PackageManager,omitempty"`
-	VersionPath              string       `yaml:"VersionPath,omitempty"`
-	WorkspaceFile            string       `yaml:"WorkspaceFile,omitempty"`
-	Commands                 *Commands    `yaml:"Commands,omitempty"`
-	Workspaces               []*Workspace `yaml:"Workspaces,omitempty"`
-	ChangedDeps              []string     `yaml:"ChangedDeps,omitempty"`
-	DefaultExternalDepMethod bool         `yaml:"DefaultExternalDepMethod,omitempty"`
-	VersionChanged           bool         `yaml:"VersionChanged,omitempty"`
+	Name                      string              `yaml:"Name,omitempty"`
+	FileExtension             string              `yaml:"FileExtension,omitempty"`
+	VersionPath               string              `yaml:"VersionPath,omitempty"`
+	WorkspaceFile             string              `yaml:"WorkspaceFile,omitempty"`
+	TaskExec                  *TaskCommands       `yaml:"TaskCommands,omitempty"`
+	DepCommands               *DependencyCommands `yaml:"DependencyCommands,omitempty"`
+	Workspaces                []*Workspace        `yaml:"Workspaces,omitempty"`
+	StdLibDeps                []string            `yaml:"StdLibDeps,omitempty"`
+	ExternalDeps              []string            `yaml:"ExternalDeps,omitempty"`
+	BuiltinStdLibsMethod      bool                `yaml:"BuiltinStdLibsMethod,omitempty"`
+	BuiltinWorkspaceDepMethod bool                `yaml:"BuiltinWorkspaceDepMethod,omitempty"`
+	BuiltinExternalDepMethod  bool                `yaml:"DefaultExternalDepMethod,omitempty"`
+	VersionChanged            bool                `yaml:"VersionChanged,omitempty"`
 }
 
-type Commands struct {
-	SetUpCommands      []string `yaml:"SetUpCommands,omitempty"`
-	LintPath           string   `yaml:"LintPath,omitempty"`
-	LintCommand        string   `yaml:"LintCommand,omitempty"`
-	TestPath           string   `yaml:"TestPath,omitempty"`
-	TestCommand        string   `yaml:"TestCommand,omitempty"`
-	BuildPath          string   `yaml:"BuildMethodPath,omitempty"`
-	BuildCommand       string   `yaml:"BuildCommand,omitempty"`
-	PublishPath        string   `yaml:"PublishPath,omitempty"`
-	PublishCommand     string   `yaml:"PublishCommand,omitempty"`
-	ExternalDepPath    string   `yaml:"ExternalDepPath,omitempty"`
-	ExternalDepCommand string   `yaml:"ExternalDepCommand,omitempty"`
+type TaskCommands struct {
+	SetUpCommands  []string `yaml:"SetUpCommands,omitempty"`
+	LintPath       string   `yaml:"LintPath,omitempty"`
+	LintCommand    string   `yaml:"LintCommand,omitempty"`
+	TestPath       string   `yaml:"TestPath,omitempty"`
+	TestCommand    string   `yaml:"TestCommand,omitempty"`
+	BuildPath      string   `yaml:"BuildMethodPath,omitempty"`
+	BuildCommand   string   `yaml:"BuildCommand,omitempty"`
+	PublishPath    string   `yaml:"PublishPath,omitempty"`
+	PublishCommand string   `yaml:"PublishCommand,omitempty"`
+}
+
+type DependencyCommands struct {
+	StdLibsPath         string `yaml:"stdLibsPath,omitempty"`
+	StdLibsCommand      string `yaml:"stdLibsCommand,omitempty"`
+	WorkspaceDepPath    string `yaml:"InternalDepPath,omitempty"`
+	WorkspaceDepCommand string `yaml:"InternalDepCommand,omitempty"`
+	ExternalDepPath     string `yaml:"ExternalDepPath,omitempty"`
+	ExternalDepCommand  string `yaml:"ExternalDepCommand,omitempty"`
 }
 
 func PopulateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) (err error) {
 	now := time.Now()
 	fmt.Fprintf(cmd.OutOrStdout(), "Enumerating repo. Creating build, lint, and test tasks...\n")
 	for _, lang := range bc.Languages {
-		if err = createTasks(lang, taskQueue, BuildStepLint, lang.Commands.LintCommand, lang.Commands.LintPath); err != nil {
+		if err = createTasks(lang, taskQueue, BuildStepLint, lang.TaskExec.LintCommand, lang.TaskExec.LintPath); err != nil {
 			return fmt.Errorf("Error creating lint tasks: %v\n", err)
 		}
 	}
 	for _, lang := range bc.Languages {
-		if err = createTasks(lang, taskQueue, BuildStepTest, lang.Commands.TestCommand, lang.Commands.TestPath); err != nil {
+		if err = createTasks(lang, taskQueue, BuildStepTest, lang.TaskExec.TestCommand, lang.TaskExec.TestPath); err != nil {
 			return fmt.Errorf("Error creating Test tasks: %v\n", err)
 		}
 	}
 	for _, lang := range bc.Languages {
-		if err = createTasks(lang, taskQueue, BuildStepBuild, lang.Commands.BuildCommand, lang.Commands.BuildPath); err != nil {
+		if err = createTasks(lang, taskQueue, BuildStepBuild, lang.TaskExec.BuildCommand, lang.TaskExec.BuildPath); err != nil {
 			return fmt.Errorf("Error creating build tasks: %v\n", err)
 		}
 	}
 	for _, lang := range bc.Languages {
-		if err = createTasks(lang, taskQueue, BuildStepPublish, lang.Commands.PublishCommand, lang.Commands.PublishPath); err != nil {
+		if err = createTasks(lang, taskQueue, BuildStepPublish, lang.TaskExec.PublishCommand, lang.TaskExec.PublishPath); err != nil {
 			return fmt.Errorf("Error creating publish tasks: %v\n", err)
 		}
 	}
@@ -74,7 +84,7 @@ func PopulateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) (
 // Executes commands that must be run before the creation of tasks
 func preliminaryCommands(langs []*Language) (err error) {
 	for _, lang := range langs {
-		for _, cmd := range lang.Commands.SetUpCommands {
+		for _, cmd := range lang.TaskExec.SetUpCommands {
 			fmt.Printf("\nExecuting: %s...  ", cmd)
 
 			commandParts := splitCommand(cmd)
@@ -103,17 +113,16 @@ func splitCommand(cmd string) []string {
 	return commandParts
 }
 
-func executeUserMethods(cmd, path, step, name string, marshaledData []byte) (responseData []byte, err error) {
+func executeUserMethods(cmd, path, name string) (response []string, err error) {
 	commandParts := splitCommand(cmd)
 	if len(commandParts) == 0 {
-		err = fmt.Errorf("%s command not supplied for the language %s.\n", step, name)
+		err = fmt.Errorf("Dependency commands not supplied for the language %s.\n", name)
 		return
 	}
 	execCmd := exec.Command(commandParts[0], commandParts[1:]...)
 	if path != "" {
 		execCmd.Dir = path
 	}
-	stdin, _ := execCmd.StdinPipe()
 	stdout, _ := execCmd.StdoutPipe()
 
 	if err = execCmd.Start(); err != nil {
@@ -121,62 +130,41 @@ func executeUserMethods(cmd, path, step, name string, marshaledData []byte) (res
 		return
 	}
 
-	fmt.Fprintln(stdin, string(marshaledData))
-	stdin.Close()
-
 	buffer := make([]byte, 1024)
 	n, err := stdout.Read(buffer)
 	if err != nil {
-		err = fmt.Errorf("Error reading response for user %s method: %v", step, err)
 		return
 	}
-	responseData = buffer[:n]
+	responseData := buffer[:n]
 
 	if err = execCmd.Wait(); err != nil {
 		err = fmt.Errorf("Error executing '%s':\n %v\n", cmd, err)
 		return
 	}
-	return
-}
 
-func CreateWorkspaces(bc *ButlerConfig, paths []string) (err error) {
-	for _, lang := range bc.Languages {
-		lang.Workspaces, err = getWorkspaces(bc, lang, paths)
-		if err != nil {
-			return fmt.Errorf("Error getting workspaces for %s: %v\n", lang.Name, err)
-		}
-
-		if !lang.DefaultExternalDepMethod {
-			lang.ChangedDeps, err = getExternalDeps(lang.Commands, lang.Name)
-		} else {
-			lang.ChangedDeps, err = builtInGetThirdPartyDeps(lang.Name, bc.Paths.WorkspaceRoot)
-		}
-		if err != nil {
-			return fmt.Errorf("Error getting external dependencies for %s: %v\n", lang.Name, err)
-		}
+	if err = json.Unmarshal(responseData, &response); err != nil {
+		err = fmt.Errorf("Error unmarshaling: %v\n", err)
+		return
 	}
 	return
 }
 
-func getExternalDeps(Commands *Commands, name string) (changedDeps []string, err error) {
-	buffer, err := executeUserMethods(Commands.ExternalDepCommand, Commands.ExternalDepPath, "external dependency", name, []byte{})
+func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
+	if lang.BuiltinStdLibsMethod {
+		lang.StdLibDeps, err = builtin.DependencyParsing(lang.Name, bc.Paths.WorkspaceRoot)
+	} else {
+		lang.StdLibDeps, err = executeUserMethods(lang.DepCommands.StdLibsCommand, lang.DepCommands.StdLibsPath, lang.Name)
+	}
 	if err != nil {
 		return
 	}
 
-	if err = json.Unmarshal(buffer, &changedDeps); err != nil {
-		err = fmt.Errorf("Error unmarshaling changed external dependencies: %v\n", err)
-		return
+	if lang.BuiltinExternalDepMethod {
+		lang.ExternalDeps, err = builtin.DependencyParsing(lang.Name, bc.Paths.WorkspaceRoot)
+	} else {
+		lang.ExternalDeps, err = executeUserMethods(lang.DepCommands.ExternalDepCommand, lang.DepCommands.ExternalDepPath, lang.Name)
 	}
 
-	return
-}
-
-func builtInGetThirdPartyDeps(name string, workspaceRoot string) (changedDeps []string, err error) {
-	changedDeps, err = builtin.ExternalDependencyParsing(name, workspaceRoot)
-	if err != nil {
-		return
-	}
 	return
 }
 

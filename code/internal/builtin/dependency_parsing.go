@@ -13,14 +13,14 @@ import (
 var languageConfigPath = getRootDir()
 
 type LanguageMethod struct {
-	Name                     string
-	InternalDependencyMethod string
-	ExternalDependencyMethod string
-	Aliases                  []string
+	Name                      string
+	StdLibMethod              string
+	WorkspaceDependencyMethod string
+	ExternalDependencyMethod  string
+	Aliases                   []string
 }
 
-// wrapper for built in default methods of acquiring third party repo dependencies.
-func ExternalDependencyParsing(languageName string, workspaceRoot string) (changedDeps []string, err error) {
+func DependencyParsing(languageName, workspaceRoot string) (dependencies []string, err error) {
 	methods, err := getMethods(languageName)
 	if err != nil {
 		err = fmt.Errorf("Error getting language methods for %s: %v\n", languageName, err)

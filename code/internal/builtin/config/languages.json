@@ -1,0 +1,12 @@
+{
+  "golang": {
+    "aliases": ["go"],
+    "stdlibMethod": ""
+  },
+  "javascript": {
+    "aliases": ["js"]
+  },
+  "typescript": {
+    "aliases": ["ts"]
+  }
+}

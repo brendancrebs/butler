@@ -17,13 +17,15 @@ func Test_loadConfig(t *testing.T) {
 		expectedLanguage := &Language{
 			Name:          "golang",
 			FileExtension: ".go",
-			Commands: &Commands{
-				LintCommand:        "echo go lint command",
-				TestCommand:        "echo go test command",
-				BuildCommand:       "echo go build command",
-				PublishCommand:     "echo go publish command",
+			TaskExec: &TaskCommands{
+				LintCommand:    "echo go lint command",
+				TestCommand:    "echo go test command",
+				BuildCommand:   "echo go build command",
+				PublishCommand: "echo go publish command",
+				SetUpCommands:  []string{"echo go test"},
+			},
+			DepCommands: &DependencyCommands{
 				ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go",
-				SetUpCommands:      []string{"echo go test"},
 			},
 		}
 

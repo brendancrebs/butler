@@ -24,18 +24,15 @@ const (
 )
 
 // Collects workspaces for a language
-func getWorkspaces(baseConfig *ButlerConfig, lang *Language, paths []string) (workspaces []*Workspace, err error) {
+func getWorkspaces(lang *Language, paths []string) (workspaces []*Workspace, err error) {
 	var allDirs map[string]bool
 	if lang.WorkspaceFile != "" {
 		allDirs = getMatchingDirs(paths, lang.WorkspaceFile)
 	} else {
 		allDirs = getMatchingDirs(paths, lang.FileExtension)
 	}
-	stdLibs, err := goGetStdLibs(goPath)
-	if err != nil {
-		return
-	}
-	workspaces = concurrentGetWorkspaces(baseConfig, allDirs, goPath, stdLibs)
+
+	workspaces = concurrentGetWorkspaces(allDirs, goPath, lang.StdLibDeps)
 	return
 }
 
@@ -51,23 +48,23 @@ func getMatchingDirs(dirs []string, pattern string) (matches map[string]bool) {
 	return
 }
 
-// goGetStdLibs returns the list of go std libs for the current go executable.
-func goGetStdLibs(goPath string) ([]string, error) {
-	cmd := exec.Command(goPath, "list", "std")
+// // goGetStdLibs returns the list of go std libs for the current go executable.
+// func goGetStdLibs(goPath string) ([]string, error) {
+// 	cmd := exec.Command(goPath, "list", "std")
 
-	output, err := execOutputStub(cmd)
-	s := bufio.NewScanner(bytes.NewBuffer(output))
-	var results []string
-	for s.Scan() {
-		results = append(results, s.Text())
-	}
+// 	output, err := execOutputStub(cmd)
+// 	s := bufio.NewScanner(bytes.NewBuffer(output))
+// 	var results []string
+// 	for s.Scan() {
+// 		results = append(results, s.Text())
+// 	}
 
-	return results, err
-}
+// 	return results, err
+// }
 
 // Returns the full set of workspaces.  Brute force multithreading, spins out the requests and lets
 // the go runtime handle the workload.
-func concurrentGetWorkspaces(baseConfig *ButlerConfig, allDirs map[string]bool, goPath string, stdLibs []string) (ws []*Workspace) {
+func concurrentGetWorkspaces(allDirs map[string]bool, goPath string, stdLibs []string) (ws []*Workspace) {
 	var (
 		mu sync.Mutex
 		wg sync.WaitGroup
