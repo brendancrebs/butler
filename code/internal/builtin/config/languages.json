@@ -1,12 +1,14 @@
-{
-  "golang": {
-    "aliases": ["go"],
-    "stdlibMethod": ""
+[
+  {
+    "id": "golang",
+    "aliases": ["go"]
   },
-  "javascript": {
+  {
+    "id": "javascript",
     "aliases": ["js"]
   },
-  "typescript": {
+  {
+    "id": "typescript",
     "aliases": ["ts"]
   }
-}
+]

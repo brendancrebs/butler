@@ -48,7 +48,7 @@ func GetTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 
 	for _, lang := range bc.Languages {
 		if err = lang.getExternalDeps(bc); err != nil {
-			return nil, fmt.Errorf("Error getting external dependencies for %s: \n%v\n", lang.Name, err)
+			return
 		}
 
 		lang.Workspaces, err = getWorkspaces(lang, allPaths)

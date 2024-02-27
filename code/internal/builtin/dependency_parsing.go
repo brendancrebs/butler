@@ -7,50 +7,58 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
+	"reflect"
+	"strings"
 )
 
-var languageConfigPath = getRootDir()
+const languageConfigPath = "/workspaces/butler/code/internal/builtin/config/languages.json"
 
-type LanguageMethod struct {
-	Name                      string
-	StdLibMethod              string
-	WorkspaceDependencyMethod string
-	ExternalDependencyMethod  string
-	Aliases                   []string
+type Language struct {
+	Id      string
+	Aliases []string
 }
 
-func DependencyParsing(languageName, workspaceRoot string) (dependencies []string, err error) {
-	methods, err := getMethods(languageName)
+func GetLanguageId(languageName string) (languageId string, err error) {
+	languageId, err = getMethods(languageName)
 	if err != nil {
-		err = fmt.Errorf("Error getting language methods for %s: %v\n", languageName, err)
+		err = fmt.Errorf("Error getting language id for %s: %v\n", languageName, err)
 	}
-	fmt.Printf("\nMethods: %+v\n", methods)
+
+	fmt.Printf("\nID: %v\n", languageId)
 	return
 }
 
-// obtains language default language methods for a given language
-func getMethods(name string) (language LanguageMethod, err error) {
-	data, err := os.ReadFile(languageConfigPath)
+// obtains language id from config
+func getMethods(name string) (languageId string, err error) {
+	languageId = strings.ToLower(name)
+	output, err := os.ReadFile(languageConfigPath)
 	if err != nil {
 		return
 	}
 
 	// Parse the languages.json data
-	var jsonData map[string]LanguageMethod
-	if err = json.Unmarshal(data, &jsonData); err != nil {
+	var jsonLanguages []Language
+	if err = json.Unmarshal(output, &jsonLanguages); err != nil {
 		return
 	}
 
-	// Retrieve the object based on the provided key
-	if language, ok := jsonData[name]; ok {
-		return language, nil
+	// Retrieve the language based on the provided key
+	for _, lang := range jsonLanguages {
+		if languageId == lang.Id {
+			return
+		}
+		for _, alias := range lang.Aliases {
+			if languageId == alias {
+				return lang.Id, nil
+			}
+		}
 	}
-	return
+	return "", fmt.Errorf("Language not found")
 }
 
-func getRootDir() string {
-	execDir, _ := os.Executable()
-	absolutePath := filepath.Join(execDir, "../config/languages.json")
-	return absolutePath
+func GetStdLibs(languageId string) (stdLibs map[string]string, err error) {
+	var m map[string]string
+	method := reflect.ValueOf(m).MethodByName("goStdLibs")
+	stdLibs = method.Call(nil)
+	return
 }

@@ -23,11 +23,11 @@ type Language struct {
 	TaskExec                  *TaskCommands       `yaml:"TaskCommands,omitempty"`
 	DepCommands               *DependencyCommands `yaml:"DependencyCommands,omitempty"`
 	Workspaces                []*Workspace        `yaml:"Workspaces,omitempty"`
-	StdLibDeps                []string            `yaml:"StdLibDeps,omitempty"`
-	ExternalDeps              []string            `yaml:"ExternalDeps,omitempty"`
+	StdLibDeps                map[string]string   `yaml:"StdLibDeps,omitempty"`
+	ExternalDeps              map[string]string   `yaml:"ExternalDeps,omitempty"`
 	BuiltinStdLibsMethod      bool                `yaml:"BuiltinStdLibsMethod,omitempty"`
 	BuiltinWorkspaceDepMethod bool                `yaml:"BuiltinWorkspaceDepMethod,omitempty"`
-	BuiltinExternalDepMethod  bool                `yaml:"DefaultExternalDepMethod,omitempty"`
+	BuiltinExternalDepMethod  bool                `yaml:"BuiltinExternalDepMethod,omitempty"`
 	VersionChanged            bool                `yaml:"VersionChanged,omitempty"`
 }
 
@@ -113,7 +113,7 @@ func splitCommand(cmd string) []string {
 	return commandParts
 }
 
-func executeUserMethods(cmd, path, name string) (response []string, err error) {
+func executeUserMethods(cmd, path, name string) (response map[string]string, err error) {
 	commandParts := splitCommand(cmd)
 	if len(commandParts) == 0 {
 		err = fmt.Errorf("Dependency commands not supplied for the language %s.\n", name)
@@ -150,19 +150,18 @@ func executeUserMethods(cmd, path, name string) (response []string, err error) {
 }
 
 func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
+	lang.Name, err = builtin.GetLanguageId(lang.Name)
+	if err != nil {
+		return
+	}
+
 	if lang.BuiltinStdLibsMethod {
-		lang.StdLibDeps, err = builtin.DependencyParsing(lang.Name, bc.Paths.WorkspaceRoot)
+		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
 	} else {
 		lang.StdLibDeps, err = executeUserMethods(lang.DepCommands.StdLibsCommand, lang.DepCommands.StdLibsPath, lang.Name)
 	}
 	if err != nil {
 		return
-	}
-
-	if lang.BuiltinExternalDepMethod {
-		lang.ExternalDeps, err = builtin.DependencyParsing(lang.Name, bc.Paths.WorkspaceRoot)
-	} else {
-		lang.ExternalDeps, err = executeUserMethods(lang.DepCommands.ExternalDepCommand, lang.DepCommands.ExternalDepPath, lang.Name)
 	}
 
 	return
