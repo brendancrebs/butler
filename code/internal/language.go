@@ -23,8 +23,8 @@ type Language struct {
 	TaskExec                  *TaskCommands       `yaml:"TaskCommands,omitempty"`
 	DepCommands               *DependencyCommands `yaml:"DependencyCommands,omitempty"`
 	Workspaces                []*Workspace        `yaml:"Workspaces,omitempty"`
-	StdLibDeps                map[string]string   `yaml:"StdLibDeps,omitempty"`
-	ExternalDeps              map[string]string   `yaml:"ExternalDeps,omitempty"`
+	StdLibDeps                []string            `yaml:"StdLibDeps,omitempty"`
+	ExternalDeps              []string            `yaml:"ExternalDeps,omitempty"`
 	BuiltinStdLibsMethod      bool                `yaml:"BuiltinStdLibsMethod,omitempty"`
 	BuiltinWorkspaceDepMethod bool                `yaml:"BuiltinWorkspaceDepMethod,omitempty"`
 	BuiltinExternalDepMethod  bool                `yaml:"BuiltinExternalDepMethod,omitempty"`
@@ -113,7 +113,7 @@ func splitCommand(cmd string) []string {
 	return commandParts
 }
 
-func executeUserMethods(cmd, path, name string) (response map[string]string, err error) {
+func executeUserMethods(cmd, path, name string) (response []string, err error) {
 	commandParts := splitCommand(cmd)
 	if len(commandParts) == 0 {
 		err = fmt.Errorf("Dependency commands not supplied for the language %s.\n", name)
@@ -158,7 +158,7 @@ func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
 	if lang.BuiltinStdLibsMethod {
 		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
 	} else {
-		lang.StdLibDeps, err = executeUserMethods(lang.DepCommands.StdLibsCommand, lang.DepCommands.StdLibsPath, lang.Name)
+		lang.StdLibDeps, err = executeUserMethods(lang.DepCommands.ExternalDepCommand, lang.DepCommands.ExternalDepPath, lang.Name)
 	}
 	if err != nil {
 		return

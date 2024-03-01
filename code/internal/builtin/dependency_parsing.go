@@ -7,11 +7,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"reflect"
+	"os/exec"
 	"strings"
 )
 
 const languageConfigPath = "/workspaces/butler/code/internal/builtin/config/languages.json"
+
+var execOutputStub = (*exec.Cmd).Output
 
 type Language struct {
 	Id      string
@@ -23,8 +25,6 @@ func GetLanguageId(languageName string) (languageId string, err error) {
 	if err != nil {
 		err = fmt.Errorf("Error getting language id for %s: %v\n", languageName, err)
 	}
-
-	fmt.Printf("\nID: %v\n", languageId)
 	return
 }
 
@@ -56,9 +56,19 @@ func getMethods(name string) (languageId string, err error) {
 	return "", fmt.Errorf("Language not found")
 }
 
-func GetStdLibs(languageId string) (stdLibs map[string]string, err error) {
-	var m map[string]string
-	method := reflect.ValueOf(m).MethodByName("goStdLibs")
-	stdLibs = method.Call(nil)
+func GetStdLibs(languageId string) (stdLibs []string, err error) {
+	switch languageId {
+	case golangId:
+		stdLibs, err = goGetStdLibs()
+	}
+
+	return
+}
+
+func GetWorkspaceDeps(languageId, directory string) (deps []string) {
+	switch languageId {
+	case golangId:
+		deps = goGetPkgDeps(directory)
+	}
 	return
 }

@@ -4,12 +4,11 @@
 package internal
 
 import (
-	"bufio"
-	"bytes"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"selinc.com/butler/code/internal/builtin"
 )
 
 type Workspace struct {
@@ -18,10 +17,6 @@ type Workspace struct {
 	IsDirty               bool
 	WorkspaceDependencies []string
 }
-
-const (
-	goPath = "/usr/local/go/bin/go"
-)
 
 // Collects workspaces for a language
 func getWorkspaces(lang *Language, paths []string) (workspaces []*Workspace, err error) {
@@ -32,7 +27,7 @@ func getWorkspaces(lang *Language, paths []string) (workspaces []*Workspace, err
 		allDirs = getMatchingDirs(paths, lang.FileExtension)
 	}
 
-	workspaces = concurrentGetWorkspaces(allDirs, goPath, lang.StdLibDeps)
+	workspaces = concurrentGetWorkspaces(lang.Name, lang.StdLibDeps, allDirs)
 	return
 }
 
@@ -48,23 +43,9 @@ func getMatchingDirs(dirs []string, pattern string) (matches map[string]bool) {
 	return
 }
 
-// // goGetStdLibs returns the list of go std libs for the current go executable.
-// func goGetStdLibs(goPath string) ([]string, error) {
-// 	cmd := exec.Command(goPath, "list", "std")
-
-// 	output, err := execOutputStub(cmd)
-// 	s := bufio.NewScanner(bytes.NewBuffer(output))
-// 	var results []string
-// 	for s.Scan() {
-// 		results = append(results, s.Text())
-// 	}
-
-// 	return results, err
-// }
-
 // Returns the full set of workspaces.  Brute force multithreading, spins out the requests and lets
 // the go runtime handle the workload.
-func concurrentGetWorkspaces(allDirs map[string]bool, goPath string, stdLibs []string) (ws []*Workspace) {
+func concurrentGetWorkspaces(languageId string, stdLibs []string, allDirs map[string]bool) (ws []*Workspace) {
 	var (
 		mu sync.Mutex
 		wg sync.WaitGroup
@@ -75,7 +56,7 @@ func concurrentGetWorkspaces(allDirs map[string]bool, goPath string, stdLibs []s
 		// must proxy dir into a different variable to make it safe to use inside the closure.
 		go func(thisDir string) {
 			var (
-				deps       = goGetPkgDeps(goPath, thisDir)
+				deps       = builtin.GetWorkspaceDeps(languageId, thisDir)
 				prunedDeps = difference(deps, stdLibs)
 				workspace  = &Workspace{Location: thisDir, WorkspaceDependencies: prunedDeps}
 			)
@@ -87,22 +68,6 @@ func concurrentGetWorkspaces(allDirs map[string]bool, goPath string, stdLibs []s
 	}
 	wg.Wait()
 	return
-}
-
-// goGetPkgDeps returns the list of go package dependencies for a given package.
-// It returns nothing if the folder is not or does not contains any go files.
-func goGetPkgDeps(goPath, directory string) []string {
-	cmd := exec.Command(goPath, "list", "-test", "-f", `{{join .Deps "\n"}}`, directory)
-
-	output, _ := execOutputStub(cmd)
-	s := bufio.NewScanner(bytes.NewBuffer(output))
-
-	var results []string
-	for s.Scan() {
-		results = append(results, s.Text())
-	}
-
-	return results
 }
 
 // difference returns the elements in `a` that aren't in `b`.

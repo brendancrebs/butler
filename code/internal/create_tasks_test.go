@@ -32,3 +32,17 @@ func Test_criticalFolderChanged(t *testing.T) {
 		})
 	}
 }
+
+func Test_queue(t *testing.T) {
+	Convey("Queue can push and pop as expected.", t, func() {
+		testQueue := &Queue{tasks: make([]*Task, 0)}
+		testQueue.Enqueue(&Task{})
+		testQueue.Enqueue(&Task{})
+		testQueue.Enqueue(&Task{})
+		So(testQueue.Size(), ShouldEqual, 3)
+
+		testQueue.Dequeue()
+		testQueue.Dequeue()
+		So(testQueue.Size(), ShouldEqual, 1)
+	})
+}

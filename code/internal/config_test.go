@@ -15,8 +15,10 @@ func Test_loadConfig(t *testing.T) {
 		configPath = "./test_data/test_helpers/.butler.base.yaml"
 
 		expectedLanguage := &Language{
-			Name:          "golang",
-			FileExtension: ".go",
+			Name:                     "golang",
+			FileExtension:            ".go",
+			BuiltinStdLibsMethod:     true,
+			BuiltinExternalDepMethod: true,
 			TaskExec: &TaskCommands{
 				LintCommand:    "echo go lint command",
 				TestCommand:    "echo go test command",
@@ -34,7 +36,7 @@ func Test_loadConfig(t *testing.T) {
 			Paths: &ButlerPaths{
 				AllowedPaths:    []string{"test_repo"},
 				BlockedPaths:    []string{"ci/", "specs", ".devcontainer", "bad_configs"},
-				WorkspaceRoot:   "../..",
+				WorkspaceRoot:   "/workspaces/butler",
 				ResultsFilePath: butlerResultsPath,
 			},
 			Git: &GitConfigurations{

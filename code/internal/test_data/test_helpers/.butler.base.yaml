@@ -2,7 +2,7 @@
 # SEL Confidential
 
 paths:
-  workspace-root: "../.."
+  workspace-root: "/workspaces/butler"
   allowed-paths:
     - test_repo
 
@@ -26,6 +26,8 @@ tasks:
 languages:
   - Name: "golang"
     FileExtension: ".go"
+    BuiltinStdLibsMethod: true
+    BuiltinExternalDepMethod: true
     DependencyCommands:
       ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
     TaskCommands: 
