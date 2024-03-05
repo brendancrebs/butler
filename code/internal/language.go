@@ -52,54 +52,46 @@ type DependencyCommands struct {
 	ExternalDepCommand  string `yaml:"ExternalDepCommand,omitempty"`
 }
 
-func PopulateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) (err error) {
+func PopulateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	now := time.Now()
 	fmt.Fprintf(cmd.OutOrStdout(), "Enumerating repo. Creating build, lint, and test tasks...\n")
+
+	// The calls for createTasks are in separate loops so lint tasks for all languages will be first
+	// in queue and so on for the other task types.
 	for _, lang := range bc.Languages {
-		if err = createTasks(lang, taskQueue, BuildStepLint, lang.TaskExec.LintCommand, lang.TaskExec.LintPath); err != nil {
-			return fmt.Errorf("Error creating lint tasks: %v\n", err)
-		}
+		createTasks(lang, taskQueue, BuildStepLint, lang.TaskExec.LintCommand, lang.TaskExec.LintPath)
 	}
 	for _, lang := range bc.Languages {
-		if err = createTasks(lang, taskQueue, BuildStepTest, lang.TaskExec.TestCommand, lang.TaskExec.TestPath); err != nil {
-			return fmt.Errorf("Error creating Test tasks: %v\n", err)
-		}
+		createTasks(lang, taskQueue, BuildStepTest, lang.TaskExec.TestCommand, lang.TaskExec.TestPath)
 	}
 	for _, lang := range bc.Languages {
-		if err = createTasks(lang, taskQueue, BuildStepBuild, lang.TaskExec.BuildCommand, lang.TaskExec.BuildPath); err != nil {
-			return fmt.Errorf("Error creating build tasks: %v\n", err)
-		}
+		createTasks(lang, taskQueue, BuildStepBuild, lang.TaskExec.BuildCommand, lang.TaskExec.BuildPath)
 	}
 	for _, lang := range bc.Languages {
-		if err = createTasks(lang, taskQueue, BuildStepPublish, lang.TaskExec.PublishCommand, lang.TaskExec.PublishPath); err != nil {
-			return fmt.Errorf("Error creating publish tasks: %v\n", err)
-		}
+		createTasks(lang, taskQueue, BuildStepPublish, lang.TaskExec.PublishCommand, lang.TaskExec.PublishPath)
 	}
 
 	fmt.Fprintf(cmd.OutOrStdout(), "Done. %s\n\n", time.Since(now).String())
-
-	return
 }
 
 // Executes commands that must be run before the creation of tasks
 func preliminaryCommands(langs []*Language) (err error) {
 	for _, lang := range langs {
 		for _, cmd := range lang.TaskExec.SetUpCommands {
-			fmt.Printf("\nExecuting: %s...  ", cmd)
+			fmt.Printf("\nexecuting: %s...  ", cmd)
 
 			commandParts := splitCommand(cmd)
 			if len(commandParts) == 0 {
-				fmt.Println("Empty command, skipping")
+				fmt.Println("empty command, skipping")
 				continue
 			}
-
 			cmd := exec.Command(commandParts[0], commandParts[1:]...)
 
 			if output, err := execOutputStub(cmd); err != nil {
-				err = fmt.Errorf("Error executing '%s':\nError: %v\nOutput: %v", cmd, err, output)
+				err = fmt.Errorf("error executing '%s':\nerror: %v\noutput: %v", cmd, err, output)
 				return err
 			} else {
-				fmt.Printf("Success\n")
+				fmt.Printf("success\n")
 			}
 		}
 	}
@@ -116,7 +108,7 @@ func splitCommand(cmd string) []string {
 func executeUserMethods(cmd, path, name string) (response []string, err error) {
 	commandParts := splitCommand(cmd)
 	if len(commandParts) == 0 {
-		err = fmt.Errorf("Dependency commands not supplied for the language %s.\n", name)
+		err = fmt.Errorf("dependency commands not supplied for the language %s.\n", name)
 		return
 	}
 	execCmd := exec.Command(commandParts[0], commandParts[1:]...)
@@ -125,8 +117,8 @@ func executeUserMethods(cmd, path, name string) (response []string, err error) {
 	}
 	stdout, _ := execCmd.StdoutPipe()
 
-	if err = execCmd.Start(); err != nil {
-		err = fmt.Errorf("Error executing '%s':\n %v\n", cmd, err)
+	if err = execStartStub(execCmd); err != nil {
+		err = fmt.Errorf("error starting execution of '%s': %v\n", cmd, err)
 		return
 	}
 
@@ -137,13 +129,12 @@ func executeUserMethods(cmd, path, name string) (response []string, err error) {
 	}
 	responseData := buffer[:n]
 
-	if err = execCmd.Wait(); err != nil {
-		err = fmt.Errorf("Error executing '%s':\n %v\n", cmd, err)
+	if err = execWaitStub(execCmd); err != nil {
+		err = fmt.Errorf("error executing '%s': %v\n", cmd, err)
 		return
 	}
 
 	if err = json.Unmarshal(responseData, &response); err != nil {
-		err = fmt.Errorf("Error unmarshaling: %v\n", err)
 		return
 	}
 	return
@@ -167,7 +158,7 @@ func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
 	return
 }
 
-func createTasks(lang *Language, taskQueue *Queue, step BuildStep, command, commandPath string) (err error) {
+func createTasks(lang *Language, taskQueue *Queue, step BuildStep, command, commandPath string) {
 	for _, ws := range lang.Workspaces {
 		if ws.IsDirty {
 			command = replaceSubstring(command, "%w", ws.Location)
@@ -180,7 +171,6 @@ func createTasks(lang *Language, taskQueue *Queue, step BuildStep, command, comm
 			taskQueue.Enqueue(createTask(ws.Location, lang.Name, ws.Location, 0, step, createCmd))
 		}
 	}
-	return
 }
 
 // formats command strings from the butler config

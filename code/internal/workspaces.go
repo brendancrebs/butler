@@ -19,7 +19,7 @@ type Workspace struct {
 }
 
 // Collects workspaces for a language
-func getWorkspaces(lang *Language, paths []string) (workspaces []*Workspace, err error) {
+func getWorkspaces(lang *Language, paths []string) (workspaces []*Workspace) {
 	var allDirs map[string]bool
 	if lang.WorkspaceFile != "" {
 		allDirs = getMatchingDirs(paths, lang.WorkspaceFile)

@@ -4,6 +4,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -85,6 +86,11 @@ func (bc *ButlerConfig) Load(configPath string) (err error) {
 	}
 
 	err = yaml.Unmarshal(content, bc)
+	if err != nil {
+		return
+	}
+
+	err = bc.validateConfig()
 	return
 }
 
@@ -115,6 +121,31 @@ func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	*bc = ButlerConfig(defaults)
+	return nil
+}
+
+func (bc *ButlerConfig) validateConfig() error {
+	if bc.Paths.WorkspaceRoot == "" {
+		return errors.New("no workspace root has been set.\nPlease set a workspace root in the config")
+	}
+	if bc.Task.Coverage != "" {
+		cover, err := strconv.Atoi(bc.Task.Coverage)
+		if err != nil {
+			return err
+		}
+		if cover < 0 || cover > 100 {
+			return fmt.Errorf(`the test coverage threshold has been set to %d in the config. Please set coverage to a number between 0 and 100`, cover)
+		}
+	}
+	if bc.Languages == nil {
+		return errors.New(`no languages have been provided in the config`)
+	}
+	if bc.Paths.AllowedPaths == nil {
+		return errors.New(`butler has not been given permission to search for workspaces in any directories.\n Please enter a list of directories in the 'allowed-paths' config field`)
+	}
+	if bc.Git.PublishBranch == "" {
+		bc.Git.GitRepo = false
+	}
 	return nil
 }
 

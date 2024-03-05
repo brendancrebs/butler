@@ -2,7 +2,7 @@
 # SEL Confidential
 
 paths:
-  workspace-root: "../.."
+  workspace-root: "/workspaces/butler"
   allowed-paths:
     - test_repo
 
@@ -10,10 +10,11 @@ paths:
     - ci/
     - specs
     - .devcontainer
+    - bad_configs
 
 git:
   publish-branch: "main"
-  git-repository: false
+  git-repository: true
 
 tasks:
   should-run-all: false
@@ -23,14 +24,13 @@ tasks:
   should-publish: false
 
 languages:
-  - Name: "golang"
-    WorkspaceFile: "package.json"
+  - Name: "invalid"
     DependencyCommands:
-      ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
+      ExternalDepCommand: "echo collect deps"
     TaskCommands: 
-      LintCommand: "echo go lint command"
-      TestCommand: "echo go test command"
-      BuildCommand: "echo go build command"
-      PublishCommand: "echo go publish command"
+      LintCommand: "echo lint command"
+      TestCommand: "echo test command"
+      BuildCommand: "echo build command"
+      PublishCommand: "echo publish command"
       SetUpCommands:
-          - "echo go test"
+          - "echo test"

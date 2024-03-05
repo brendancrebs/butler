@@ -76,6 +76,116 @@ func Test_loadConfig(t *testing.T) {
 	})
 }
 
+func Test_validateConfig(t *testing.T) {
+	testLanguage := &Language{
+		Name: "test",
+		TaskExec: &TaskCommands{
+			SetUpCommands: []string{"echo test"},
+		},
+		DepCommands: &DependencyCommands{
+			ExternalDepCommand: "echo get deps",
+		},
+	}
+
+	Convey("Catch config that doesn't have workspace root set", t, func() {
+		testConfig := &ButlerConfig{
+			Paths: &ButlerPaths{
+				AllowedPaths: []string{"test_repo"},
+			},
+			Task: &TaskConfigurations{
+				Coverage: "100",
+			},
+			Languages: []*Language{testLanguage},
+		}
+		err := testConfig.validateConfig()
+		So(err.Error(), ShouldContainSubstring, "no workspace root has been set.\nPlease set a workspace root in the config")
+	})
+
+	Convey("Invalid coverage set in config.", t, func() {
+		testConfig := &ButlerConfig{
+			Paths: &ButlerPaths{
+				AllowedPaths:  []string{"test_repo"},
+				WorkspaceRoot: "test_repo",
+			},
+			Task: &TaskConfigurations{
+				Coverage: "",
+			},
+			Languages: []*Language{testLanguage},
+		}
+		type template struct {
+			testValue     string
+			expectedError string
+		}
+		testCoverageValues := []template{
+			{"1000", "the test coverage threshold has been set to 1000 in the config. Please set coverage to a number between 0 and 100"},
+			{"-25", "the test coverage threshold has been set to -25 in the config. Please set coverage to a number between 0 and 100"},
+			{"false", `strconv.Atoi: parsing "false": invalid syntax`},
+		}
+
+		for _, test := range testCoverageValues {
+			testConfig.Task.Coverage = test.testValue
+			err := testConfig.validateConfig()
+			So(err.Error(), ShouldContainSubstring, test.expectedError)
+		}
+	})
+
+	Convey("git repo set to false in the absence of a publish branch", t, func() {
+		testConfig := &ButlerConfig{
+			Paths: &ButlerPaths{
+				AllowedPaths:  []string{"test_repo"},
+				WorkspaceRoot: "test_repo",
+			},
+			Task: &TaskConfigurations{
+				Coverage: "100",
+			},
+			Languages: []*Language{testLanguage},
+			Git: &GitConfigurations{
+				PublishBranch: "",
+			},
+		}
+
+		err := testConfig.validateConfig()
+		So(err, ShouldBeNil)
+		So(testConfig.Git.GitRepo, ShouldBeFalse)
+	})
+
+	Convey("no languages added to config", t, func() {
+		testConfig := &ButlerConfig{
+			Paths: &ButlerPaths{
+				AllowedPaths:  []string{"test_repo"},
+				WorkspaceRoot: "test_repo",
+			},
+			Task: &TaskConfigurations{
+				Coverage: "100",
+			},
+			Git: &GitConfigurations{
+				PublishBranch: "main",
+			},
+		}
+
+		err := testConfig.validateConfig()
+		So(err.Error(), ShouldContainSubstring, "no languages have been provided in the config")
+	})
+
+	Convey("no allowed paths added to config", t, func() {
+		testConfig := &ButlerConfig{
+			Paths: &ButlerPaths{
+				WorkspaceRoot: "test_repo",
+			},
+			Task: &TaskConfigurations{
+				Coverage: "100",
+			},
+			Languages: []*Language{testLanguage},
+			Git: &GitConfigurations{
+				PublishBranch: "main",
+			},
+		}
+
+		err := testConfig.validateConfig()
+		So(err.Error(), ShouldContainSubstring, "butler has not been given permission to search for workspaces in any directories.")
+	})
+}
+
 func Test_loadButlerIgnore(t *testing.T) {
 	Convey("Paths successfully parsed from .butler.ignore.", t, func() {
 		testConfig := &ButlerConfig{

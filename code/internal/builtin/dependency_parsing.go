@@ -5,6 +5,7 @@ package builtin
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -23,7 +24,7 @@ type Language struct {
 func GetLanguageId(languageName string) (languageId string, err error) {
 	languageId, err = getMethods(languageName)
 	if err != nil {
-		err = fmt.Errorf("Error getting language id for %s: %v\n", languageName, err)
+		err = fmt.Errorf("error getting language id for %s: %v\n", languageName, err)
 	}
 	return
 }
@@ -53,7 +54,7 @@ func getMethods(name string) (languageId string, err error) {
 			}
 		}
 	}
-	return "", fmt.Errorf("Language not found")
+	return "", errors.New("Language not found")
 }
 
 func GetStdLibs(languageId string) (stdLibs []string, err error) {

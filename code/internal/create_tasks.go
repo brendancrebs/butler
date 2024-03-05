@@ -5,7 +5,6 @@ package internal
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -40,8 +39,6 @@ func GetTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 		return
 	}
 
-	fmt.Printf("\nallPaths: %v\n\n", allPaths)
-
 	if err = preliminaryCommands(bc.Languages); err != nil {
 		return
 	}
@@ -51,19 +48,14 @@ func GetTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 			return
 		}
 
-		lang.Workspaces, err = getWorkspaces(lang, allPaths)
-		if err != nil {
-			return nil, fmt.Errorf("Error getting workspaces for %s:\n%v\n", lang.Name, err)
-		}
+		lang.Workspaces = getWorkspaces(lang, allPaths)
 	}
 
 	for _, lang := range bc.Languages {
 		evaluateDirtiness(lang.Workspaces, dirtyFolders)
 	}
 
-	if err = PopulateTaskQueue(bc, taskQueue, cmd); err != nil {
-		return
-	}
+	PopulateTaskQueue(bc, taskQueue, cmd)
 
 	return
 }

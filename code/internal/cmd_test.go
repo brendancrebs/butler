@@ -32,8 +32,16 @@ func replaceStubs() (undo func()) {
 	originalExecOutputStub := (*exec.Cmd).Output
 	execOutputStub = func(cmd *exec.Cmd) ([]byte, error) { return cmd.Output() }
 
+	originalExecStartStub := (*exec.Cmd).Start
+	execStartStub = func(cmd *exec.Cmd) error { return cmd.Start() }
+
+	originalExecWaitStub := (*exec.Cmd).Wait
+	execWaitStub = func(cmd *exec.Cmd) error { return cmd.Wait() }
+
 	return func() {
 		execOutputStub = originalExecOutputStub
+		execStartStub = originalExecStartStub
+		execWaitStub = originalExecWaitStub
 		_ = os.Remove(butlerResultsPath)
 	}
 }
@@ -199,5 +207,57 @@ func Test_RunWithErr(t *testing.T) {
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldContainSubstring, "error getting git branch")
+	})
+
+	Convey("Butler setup fails when git diff fails", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
+				return nil, errors.New("git diff failed")
+			}
+			return nil, nil
+		}
+		Execute()
+
+		_, err := os.Stat(butlerResultsPath)
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldContainSubstring, "git diff failed")
+	})
+
+	Convey("Butler setup fails when preliminary command fails", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.bad_command.yaml"})
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			if reflect.DeepEqual(cmd.Args, []string{"fail", "command"}) {
+				return nil, errors.New("test command failed")
+			}
+			return nil, nil
+		}
+		Execute()
+		So(stderr.String(), ShouldContainSubstring, "test command failed")
+	})
+
+	Convey("Butler failed when unsupported language supplied", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.invalid_lang.yaml"})
+
+		Execute()
+		So(stderr.String(), ShouldContainSubstring, "Error: error getting language id for invalid: Language not found")
 	})
 }

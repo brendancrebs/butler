@@ -2,7 +2,22 @@
 # SEL Confidential
 
 paths:
+  allowed-paths:
+    - test_repo
   workspace-root: "./test_data/bad_configs/ignore_dir"
 
 git:
   git-repository: true
+
+languages:
+  - Name: "golang"
+    FileExtension: ".go"
+    DependencyCommands:
+      ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
+    TaskCommands: 
+      LintCommand: "echo go lint command"
+      TestCommand: "echo go test command"
+      BuildCommand: "echo go build command"
+      PublishCommand: "echo go publish command"
+      SetUpCommands:
+          - "echo go test"

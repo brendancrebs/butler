@@ -42,6 +42,8 @@ var (
 		Task:  &TaskConfigurations{},
 	}
 	execOutputStub = (*exec.Cmd).Output
+	execStartStub  = (*exec.Cmd).Start
+	execWaitStub   = (*exec.Cmd).Wait
 	configPath     string
 )
 

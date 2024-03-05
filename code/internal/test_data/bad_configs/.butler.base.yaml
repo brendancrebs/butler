@@ -2,6 +2,8 @@
 # SEL Confidential
 
 paths:
+  allowed-paths:
+    - test_repo
   workspace-root: "./test_data/bad_configs"
 
 git:
