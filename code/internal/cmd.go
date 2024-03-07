@@ -14,13 +14,13 @@ import (
 
 const (
 	envBuildID         = "BUILD_ID"
-	envRunAll          = "BUTLER_SHOULD_RUN_ALL"
+	EnvRunAll          = "BUTLER_SHOULD_RUN_ALL"
 	envPublish         = "BUTLER_SHOULD_PUBLISH"
 	envBitbucketCommit = "GIT_COMMIT"
-	envBranch          = "GIT_BRANCH"
+	EnvBranch          = "GIT_BRANCH"
 )
 
-func getCommand() *cobra.Command {
+func GetCommand() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "butler <flags>",
 		Short: "butler is a build test lint runner",
@@ -35,26 +35,26 @@ func getCommand() *cobra.Command {
 }
 
 var (
-	cmd   = getCommand()
+	Cmd   = GetCommand()
 	flags = &ButlerConfig{
 		Paths: &ButlerPaths{},
 		Git:   &GitConfigurations{},
 		Task:  &TaskConfigurations{},
 	}
-	execOutputStub = (*exec.Cmd).Output
-	execStartStub  = (*exec.Cmd).Start
-	execWaitStub   = (*exec.Cmd).Wait
-	configPath     string
+	ExecOutputStub = (*exec.Cmd).Output
+	ExecStartStub  = (*exec.Cmd).Start
+	ExecWaitStub   = (*exec.Cmd).Wait
+	ConfigPath     string
 )
 
 // Execute is the entrypoint into the Butler
 func Execute() {
 	// all errors are handled internal to this call.
-	_ = cmd.Execute()
+	_ = Cmd.Execute()
 }
 
 func parseFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&configPath, "cfg", ".butler.base.yaml", "Path to config file.")
+	cmd.PersistentFlags().StringVar(&ConfigPath, "cfg", ".butler.base.yaml", "Path to config file.")
 	cmd.PersistentFlags().StringVarP(&flags.Task.Coverage, "coverage", "c", "0",
 		"the percentage of code coverage that is acceptable for tests to pass.")
 	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldRunAll, "all", "a", false, "Runs all tasks regardless of diff.")
@@ -82,7 +82,7 @@ func run(cmd *cobra.Command, args []string) (err error) {
 	var taskQueue *Queue
 
 	config := &ButlerConfig{}
-	if err = config.Load(configPath); err != nil {
+	if err = config.Load(ConfigPath); err != nil {
 		return
 	}
 	config.applyFlagsToConfig(cmd, flags)
@@ -100,7 +100,7 @@ func run(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	for _, task := range taskQueue.tasks {
+	for _, task := range taskQueue.Tasks {
 		fmt.Printf("\ntask: %+v", task)
 	}
 

@@ -14,32 +14,32 @@ import (
 )
 
 type Queue struct {
-	tasks []*Task
+	Tasks []*Task
 }
 
 func (q *Queue) Enqueue(task *Task) {
-	q.tasks = append(q.tasks, task)
+	q.Tasks = append(q.Tasks, task)
 }
 
 func (q *Queue) Dequeue() *Task {
-	task := q.tasks[0]
-	q.tasks = q.tasks[1:]
+	task := q.Tasks[0]
+	q.Tasks = q.Tasks[1:]
 	return task
 }
 
 func (q *Queue) Size() int {
-	return len(q.tasks)
+	return len(q.Tasks)
 }
 
 // This function will return a queue populated with tasks
 func GetTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error) {
-	taskQueue = &Queue{tasks: make([]*Task, 0)}
+	taskQueue = &Queue{Tasks: make([]*Task, 0)}
 	allPaths, dirtyFolders, err := butlerSetup(bc)
 	if err != nil {
 		return
 	}
 
-	if err = preliminaryCommands(bc.Languages); err != nil {
+	if err = PreliminaryCommands(bc.Languages); err != nil {
 		return
 	}
 
@@ -82,28 +82,28 @@ func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, er
 // Determines if Butler requires a full build.
 func shouldRunAll(bc *ButlerConfig, allDirtyPaths, dirtyFolders []string) (err error) {
 	// get current git branch name
-	currentBranch, err := getCurrentBranch()
+	currentBranch, err := GetCurrentBranch()
 	if err != nil {
 		return
 	}
 
-	bc.Task.ShouldRunAll = strings.EqualFold(getEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.Git.PublishBranch
+	bc.Task.ShouldRunAll = strings.EqualFold(GetEnvOrDefault(EnvRunAll, ""), "true") || currentBranch == bc.Git.PublishBranch
 	bc.Task.ShouldPublish = currentBranch == bc.Git.PublishBranch
-	bc.Task.ShouldRunAll = bc.Task.ShouldRunAll || criticalPathChanged(allDirtyPaths, bc.Paths.CriticalPaths)
+	bc.Task.ShouldRunAll = bc.Task.ShouldRunAll || CriticalPathChanged(allDirtyPaths, bc.Paths.CriticalPaths)
 
 	return
 }
 
 // getCurrentBranch returns the whitespace trimmed result of `git branch --show-current`
 // which should be the branch, or an error.
-func getCurrentBranch() (branch string, err error) {
-	if branch = getEnvOrDefault(envBranch, ""); branch != "" {
+func GetCurrentBranch() (branch string, err error) {
+	if branch = GetEnvOrDefault(EnvBranch, ""); branch != "" {
 		return
 	}
 
-	cmd := exec.Command(gitCommand, "branch", "--show-current")
+	cmd := exec.Command(GitCommand, "branch", "--show-current")
 
-	output, err := execOutputStub(cmd)
+	output, err := ExecOutputStub(cmd)
 	branch = strings.TrimSpace(string(output))
 
 	return
@@ -169,14 +169,14 @@ func isAllowed(path string, allowed, blocked []string) bool {
 func getDirtyPaths(branch string) ([]string, error) {
 	branch = strings.TrimSpace(branch)
 
-	args := []string{gitCommand, "diff", "--name-only"}
+	args := []string{GitCommand, "diff", "--name-only"}
 	if branch != "" {
 		args = append(args, branch)
 	}
 
 	cmd := exec.Command(args[0], args[1:]...)
 
-	output, err := execOutputStub(cmd)
+	output, err := ExecOutputStub(cmd)
 
 	return getLines(output, []byte{'\n'}), err
 }
@@ -195,7 +195,7 @@ func getLines(input, splitOn []byte) (lines []string) {
 	return
 }
 
-func criticalPathChanged(dirtyPaths, criticalPaths []string) (result bool) {
+func CriticalPathChanged(dirtyPaths, criticalPaths []string) (result bool) {
 	for _, path := range criticalPaths {
 		for _, dirtyPath := range dirtyPaths {
 			if dirtyPath == path || strings.HasPrefix(dirtyPath, path) {

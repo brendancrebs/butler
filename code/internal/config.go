@@ -19,14 +19,14 @@ import (
 const (
 	configFileName    = ".butler.base.yaml"
 	ignoreFileName    = ".butler.ignore.yaml"
-	gitCommand        = "git"
-	butlerResultsPath = "./butler_results.json"
+	GitCommand        = "git"
+	ButlerResultsPath = "./butler_results.json"
 	defaultCoverage   = "0"
 )
 
 var (
-	envShouldPublish, _ = strconv.ParseBool(getEnvOrDefault(envPublish, "false"))
-	envBranchName       = strings.TrimSpace(getEnvOrDefault(envBranch, ""))
+	envShouldPublish, _ = strconv.ParseBool(GetEnvOrDefault(envPublish, "false"))
+	envBranchName       = strings.TrimSpace(GetEnvOrDefault(EnvBranch, ""))
 )
 
 // ButlerPaths specifies the allowed and blocked paths within the .butler.ignore.yaml.
@@ -90,7 +90,7 @@ func (bc *ButlerConfig) Load(configPath string) (err error) {
 		return
 	}
 
-	err = bc.validateConfig()
+	err = bc.ValidateConfig()
 	return
 }
 
@@ -100,7 +100,7 @@ func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	type defaultConfig ButlerConfig
 	defaults := defaultConfig{
 		Paths: &ButlerPaths{
-			ResultsFilePath: butlerResultsPath,
+			ResultsFilePath: ButlerResultsPath,
 		},
 		Git: &GitConfigurations{
 			PublishBranch: envBranchName,
@@ -124,7 +124,7 @@ func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
-func (bc *ButlerConfig) validateConfig() error {
+func (bc *ButlerConfig) ValidateConfig() error {
 	if bc.Paths.WorkspaceRoot == "" {
 		return errors.New("no workspace root has been set.\nPlease set a workspace root in the config")
 	}
@@ -155,7 +155,7 @@ func (bc *ButlerConfig) String() string {
 	Used config file %s\n
 	<<<yaml\n
 	# Configuration, including command line flags, used for the current run.\n
-	%s>>>\n\n`, configPath, string(configPretty))
+	%s>>>\n\n`, ConfigPath, string(configPretty))
 }
 
 func (bc *ButlerConfig) LoadButlerIgnore() (err error) {
@@ -199,7 +199,7 @@ func concatPaths(sliceA, sliceB []string) (result []string) {
 
 // returns the value of the given environment variable if it has been set. Otherwise return the
 // default.
-func getEnvOrDefault(name, defaultValue string) string {
+func GetEnvOrDefault(name, defaultValue string) string {
 	if v := os.Getenv(name); v != "" {
 		return v
 	}

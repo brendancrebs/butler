@@ -22,14 +22,14 @@ tasks:
   should-publish: false
 
 languages:
-  - Name: "golang"
-    FileExtension: ".go"
-    BuiltinStdLibsMethod: true
-    BuiltinExternalDepMethod: true
-    DependencyCommands:
-      ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
-    TaskCommands: 
-      LintCommand: "/go/bin/golangci-lint run --timeout 5m --allow-parallel-runners --concurrency=1 ."
-      TestCommand: "go run /workspaces/butler/user_commands/go_testing_command/go_testing_command.go"
-      SetUpCommands:
+  - name: "golang"
+    fileExtension: ".go"
+    builtinStdLibsMethod: true
+    builtinExternalDepMethod: true
+    dependencyCommands:
+      externalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
+    taskCommands: 
+      lintCommand: "/go/bin/golangci-lint run --timeout 5m --allow-parallel-runners --concurrency=1 ."
+      testCommand: "go run /workspaces/butler/user_commands/go_testing_command/go_testing_command.go"
+      setUpCommands:
           - "echo go test"

@@ -1,7 +1,5 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
-# Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
-# SEL Confidential
 
 paths:
   workspace-root: "/workspaces/butler"
@@ -26,16 +24,16 @@ tasks:
   should-publish: false
 
 languages:
-  - Name: "golang"
-    FileExtension: ".go"
-    BuiltinStdLibsMethod: true
-    BuiltinExternalDepMethod: true
-    DependencyCommands:
-      ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
-    TaskCommands: 
-      LintCommand: "echo go lint command"
-      TestCommand: "echo go test command"
-      BuildCommand: "echo go build command"
-      PublishCommand: "echo go publish command"
-      SetUpCommands:
+  - name: "golang"
+    fileExtension: ".go"
+    builtinStdLibsMethod: true
+    builtinExternalDepMethod: true
+    dependencyCommands:
+      externalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
+    taskCommands: 
+      lintCommand: "echo go lint command"
+      testCommand: "echo go test command"
+      buildCommand: "echo go build command"
+      publishCommand: "echo go publish command"
+      setUpCommands:
           - "fail command"

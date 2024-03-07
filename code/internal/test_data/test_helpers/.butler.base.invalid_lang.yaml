@@ -24,13 +24,13 @@ tasks:
   should-publish: false
 
 languages:
-  - Name: "invalid"
-    DependencyCommands:
-      ExternalDepCommand: "echo collect deps"
-    TaskCommands: 
-      LintCommand: "echo lint command"
-      TestCommand: "echo test command"
-      BuildCommand: "echo build command"
-      PublishCommand: "echo publish command"
-      SetUpCommands:
+  - name: "invalid"
+    dependencyCommands:
+      externalDepCommand: "echo collect deps"
+    taskCommands: 
+      lintCommand: "echo lint command"
+      testCommand: "echo test command"
+      buildCommand: "echo build command"
+      publishCommand: "echo publish command"
+      setUpCommands:
           - "echo test"

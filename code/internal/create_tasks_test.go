@@ -1,10 +1,12 @@
 // Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 // SEL Confidential
 
-package internal
+package internal_test
 
 import (
 	"testing"
+
+	"selinc.com/butler/code/internal"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -28,17 +30,17 @@ func Test_criticalFolderChanged(t *testing.T) {
 
 	for _, test := range tests {
 		Convey(test.desc, t, func() {
-			So(criticalPathChanged(test.dirtyFolders, test.criticalFolders), ShouldResemble, test.expected)
+			So(internal.CriticalPathChanged(test.dirtyFolders, test.criticalFolders), ShouldResemble, test.expected)
 		})
 	}
 }
 
 func Test_queue(t *testing.T) {
 	Convey("Queue can push and pop as expected.", t, func() {
-		testQueue := &Queue{tasks: make([]*Task, 0)}
-		testQueue.Enqueue(&Task{})
-		testQueue.Enqueue(&Task{})
-		testQueue.Enqueue(&Task{})
+		testQueue := &internal.Queue{Tasks: make([]*internal.Task, 0)}
+		testQueue.Enqueue(&internal.Task{})
+		testQueue.Enqueue(&internal.Task{})
+		testQueue.Enqueue(&internal.Task{})
 		So(testQueue.Size(), ShouldEqual, 3)
 
 		testQueue.Dequeue()
