@@ -52,7 +52,7 @@ func GetTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 	}
 
 	for _, lang := range bc.Languages {
-		evaluateDirtiness(lang.Workspaces, dirtyFolders)
+		EvaluateDirtiness(lang.Workspaces, dirtyFolders)
 	}
 
 	PopulateTaskQueue(bc, taskQueue, cmd)
@@ -223,7 +223,7 @@ func getUniqueFolders(paths []string) []string {
 	return keys
 }
 
-func evaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
+func EvaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
 	workspaceIsDirty := make(map[string]bool)
 	mapDFs := convertToStringBoolMap(dirtyFolders)
 
@@ -242,7 +242,7 @@ func evaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
 	for madeAdditionalWorkspacesDirty {
 		madeAdditionalWorkspacesDirty = false
 		for _, ws := range workspaces {
-			for _, dep := range ws.WorkspaceDependencies {
+			for _, dep := range ws.Dependencies {
 				initialState := ws.IsDirty
 				ws.IsDirty = ws.IsDirty || mapDFs[dep] || workspaceIsDirty[dep]
 				madeAdditionalWorkspacesDirty = madeAdditionalWorkspacesDirty || (initialState != ws.IsDirty)

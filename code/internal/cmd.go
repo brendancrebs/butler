@@ -6,6 +6,7 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 
@@ -44,7 +45,9 @@ var (
 	ExecOutputStub = (*exec.Cmd).Output
 	ExecStartStub  = (*exec.Cmd).Start
 	ExecWaitStub   = (*exec.Cmd).Wait
-	ConfigPath     string
+	ReadStub       = (io.Reader).Read
+
+	ConfigPath string
 )
 
 // Execute is the entrypoint into the Butler
@@ -79,7 +82,7 @@ func parseFlags(cmd *cobra.Command) {
 }
 
 func run(cmd *cobra.Command, args []string) (err error) {
-	var taskQueue *Queue
+	// var taskQueue *Queue
 
 	config := &ButlerConfig{}
 	if err = config.Load(ConfigPath); err != nil {
@@ -95,13 +98,9 @@ func run(cmd *cobra.Command, args []string) (err error) {
 
 	fmt.Fprintln(cmd.OutOrStdout(), config)
 
-	taskQueue, err = GetTasks(config, cmd)
+	_, err = GetTasks(config, cmd)
 	if err != nil {
 		return
-	}
-
-	for _, task := range taskQueue.Tasks {
-		fmt.Printf("\ntask: %+v", task)
 	}
 
 	return

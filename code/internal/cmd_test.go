@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"reflect"
@@ -40,10 +41,17 @@ func replaceStubs() (undo func()) {
 	originalExecWaitStub := (*exec.Cmd).Wait
 	internal.ExecWaitStub = func(cmd *exec.Cmd) error { return cmd.Wait() }
 
+	originalReadStub := (io.Reader).Read
+	internal.ReadStub = func(reader io.Reader, buffer []byte) (int, error) {
+		n, err := reader.Read(buffer)
+		return n, err
+	}
+
 	return func() {
 		internal.ExecOutputStub = originalExecOutputStub
 		internal.ExecStartStub = originalExecStartStub
 		internal.ExecWaitStub = originalExecWaitStub
+		internal.ReadStub = originalReadStub
 		_ = os.Remove(internal.ButlerResultsPath)
 	}
 }
@@ -261,5 +269,33 @@ func Test_RunWithErr(t *testing.T) {
 
 		internal.Execute()
 		So(stderr.String(), ShouldContainSubstring, "Error: error getting language id for invalid: Language not found")
+	})
+
+	Convey("Butler fails when dependency parsing fails", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		internal.Cmd = internal.GetCommand()
+		stderr := new(bytes.Buffer)
+		internal.Cmd.SetErr(stderr)
+		internal.Cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.user_command.yaml"})
+		internal.ExecOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			if reflect.DeepEqual(cmd.Args, []string{internal.GitCommand, "diff", "--name-only", currBranch}) {
+				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
+				return gitDiffReturn, nil
+			}
+			return nil, nil
+		}
+		internal.ExecStartStub = func(cmd *exec.Cmd) error {
+			if reflect.DeepEqual(cmd.Args, []string{"fail", "command"}) {
+				return errors.New("test command start failed")
+			}
+			return nil
+		}
+		internal.Execute()
+
+		_, err := os.Stat(internal.ButlerResultsPath)
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldEqual, "Error: error starting execution of 'fail command': test command start failed\n\n")
 	})
 }

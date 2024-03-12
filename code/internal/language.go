@@ -59,16 +59,16 @@ func PopulateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	// The calls for createTasks are in separate loops so lint tasks for all languages will be first
 	// in queue and so on for the other task types.
 	for _, lang := range bc.Languages {
-		CreateTasks(lang, taskQueue, BuildStepLint, lang.TaskExec.LintCommand, lang.TaskExec.LintPath)
+		lang.CreateTasks(taskQueue, BuildStepLint, lang.TaskExec.LintCommand, lang.TaskExec.LintPath)
 	}
 	for _, lang := range bc.Languages {
-		CreateTasks(lang, taskQueue, BuildStepTest, lang.TaskExec.TestCommand, lang.TaskExec.TestPath)
+		lang.CreateTasks(taskQueue, BuildStepTest, lang.TaskExec.TestCommand, lang.TaskExec.TestPath)
 	}
 	for _, lang := range bc.Languages {
-		CreateTasks(lang, taskQueue, BuildStepBuild, lang.TaskExec.BuildCommand, lang.TaskExec.BuildPath)
+		lang.CreateTasks(taskQueue, BuildStepBuild, lang.TaskExec.BuildCommand, lang.TaskExec.BuildPath)
 	}
 	for _, lang := range bc.Languages {
-		CreateTasks(lang, taskQueue, BuildStepPublish, lang.TaskExec.PublishCommand, lang.TaskExec.PublishPath)
+		lang.CreateTasks(taskQueue, BuildStepPublish, lang.TaskExec.PublishCommand, lang.TaskExec.PublishPath)
 	}
 
 	fmt.Fprintf(cmd.OutOrStdout(), "Done. %s\n\n", time.Since(now).String())
@@ -123,8 +123,9 @@ func ExecuteUserMethods(cmd, path, name string) (response []string, err error) {
 	}
 
 	buffer := make([]byte, 1024)
-	n, err := stdout.Read(buffer)
+	n, err := ReadStub(stdout, buffer)
 	if err != nil {
+		err = fmt.Errorf("error executing '%s': %v\n", cmd, err)
 		return
 	}
 	responseData := buffer[:n]
@@ -134,9 +135,7 @@ func ExecuteUserMethods(cmd, path, name string) (response []string, err error) {
 		return
 	}
 
-	if err = json.Unmarshal(responseData, &response); err != nil {
-		return
-	}
+	err = json.Unmarshal(responseData, &response)
 	return
 }
 
@@ -158,7 +157,7 @@ func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
 	return
 }
 
-func CreateTasks(lang *Language, taskQueue *Queue, step BuildStep, command, commandPath string) {
+func (lang *Language) CreateTasks(taskQueue *Queue, step BuildStep, command, commandPath string) {
 	for _, ws := range lang.Workspaces {
 		if ws.IsDirty {
 			command = replaceSubstring(command, "%w", ws.Location)

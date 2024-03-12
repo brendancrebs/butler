@@ -30,14 +30,14 @@ func Test_createTasks(t *testing.T) {
 				ExternalDepCommand: "echo go external dep command",
 			},
 			Workspaces: []*internal.Workspace{
-				{Location: "./test_data/test_repo/go_test", Name: "go_test", IsDirty: true, WorkspaceDependencies: []string{}},
-				{Location: "./test_data/test_repo", Name: "go_test2", IsDirty: true, WorkspaceDependencies: []string{}},
-				{Location: "./test_data", Name: "go_test3", IsDirty: true, WorkspaceDependencies: []string{}},
+				{Location: "./test_data/test_repo/go_test", Name: "go_test", IsDirty: true, Dependencies: []string{}},
+				{Location: "./test_data/test_repo", Name: "go_test2", IsDirty: true, Dependencies: []string{}},
+				{Location: "./test_data", Name: "go_test3", IsDirty: true, Dependencies: []string{}},
 			},
 		}
 		testQueue := &internal.Queue{Tasks: make([]*internal.Task, 0)}
 
-		internal.CreateTasks(inputLanguage, testQueue, internal.BuildStepTest, inputLanguage.TaskExec.LintCommand, inputLanguage.TaskExec.LintPath)
+		inputLanguage.CreateTasks(testQueue, internal.BuildStepTest, inputLanguage.TaskExec.LintCommand, inputLanguage.TaskExec.LintPath)
 		So(inputLanguage.Workspaces, ShouldNotBeNil)
 	})
 }
@@ -105,5 +105,38 @@ func Test_executeUserMethods(t *testing.T) {
 		}
 		_, err := internal.ExecuteUserMethods("fail command", testPath, testLangName)
 		So(err.Error(), ShouldResemble, "error starting execution of 'fail command': test command start failed\n")
+	})
+
+	Convey("error on stdout read", t, func() {
+		undo := replaceStubs()
+		defer undo()
+		internal.ExecStartStub = func(cmd *exec.Cmd) error {
+			return nil
+		}
+		internal.ReadStub = func(reader io.Reader, buffer []byte) (int, error) {
+			return 0, errors.New("failed to read")
+		}
+		_, err := internal.ExecuteUserMethods("fail command", testPath, testLangName)
+		So(err.Error(), ShouldResemble, "error executing 'fail command': failed to read\n")
+	})
+
+	Convey("error on user command wait", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		internal.ExecStartStub = func(cmd *exec.Cmd) error {
+			return nil
+		}
+		internal.ReadStub = func(reader io.Reader, buffer []byte) (int, error) {
+			return 0, nil
+		}
+		internal.ExecWaitStub = func(cmd *exec.Cmd) error {
+			if reflect.DeepEqual(cmd.Args, []string{"fail", "command"}) {
+				return errors.New("test command wait failed")
+			}
+			return nil
+		}
+		_, err := internal.ExecuteUserMethods("fail command", testPath, testLangName)
+		So(err.Error(), ShouldResemble, "error executing 'fail command': test command wait failed\n")
 	})
 }

@@ -13,7 +13,7 @@ languages:
   - name: "golang"
     fileExtension: ".go"
     dependencyCommands:
-      externalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go"
+      externalDepCommand: "go run ./user_commands/go_external_deps_method.go"
     taskCommands: 
       lintCommand: "echo go lint command"
       testCommand: "echo go test command"

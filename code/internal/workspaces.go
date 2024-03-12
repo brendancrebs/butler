@@ -12,10 +12,10 @@ import (
 )
 
 type Workspace struct {
-	Location              string
-	Name                  string
-	IsDirty               bool
-	WorkspaceDependencies []string
+	Location     string
+	Name         string
+	IsDirty      bool
+	Dependencies []string
 }
 
 // Collects workspaces for a language
@@ -58,7 +58,7 @@ func concurrentGetWorkspaces(languageId string, stdLibs []string, allDirs map[st
 			var (
 				deps       = builtin.GetWorkspaceDeps(languageId, thisDir)
 				prunedDeps = difference(deps, stdLibs)
-				workspace  = &Workspace{Location: thisDir, WorkspaceDependencies: prunedDeps}
+				workspace  = &Workspace{Location: thisDir, Dependencies: prunedDeps}
 			)
 			mu.Lock()
 			ws = append(ws, workspace)

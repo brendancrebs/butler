@@ -25,7 +25,7 @@ type Dependency struct {
 	Indirect bool
 }
 
-var goModPath = "/workspaces/butler/go.mod"
+var goModPath = "../../go.mod"
 
 func main() {
 	dependencies, err := getDependencies(goModPath)

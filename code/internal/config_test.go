@@ -29,7 +29,7 @@ func Test_loadConfig(t *testing.T) {
 				SetUpCommands:  []string{"echo go test"},
 			},
 			DepCommands: &internal.DependencyCommands{
-				ExternalDepCommand: "go run /workspaces/butler/user_commands/go_external_deps_method.go",
+				ExternalDepCommand: "go run ./user_commands/go_external_deps_method.go",
 			},
 		}
 
@@ -38,7 +38,7 @@ func Test_loadConfig(t *testing.T) {
 			Paths: &internal.ButlerPaths{
 				AllowedPaths:    []string{"test_repo"},
 				BlockedPaths:    []string{"ci/", "specs", ".devcontainer", "bad_configs"},
-				WorkspaceRoot:   "/workspaces/butler",
+				WorkspaceRoot:   "../..",
 				ResultsFilePath: internal.ButlerResultsPath,
 			},
 			Git: &internal.GitConfigurations{

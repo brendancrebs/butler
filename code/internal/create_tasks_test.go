@@ -48,3 +48,25 @@ func Test_queue(t *testing.T) {
 		So(testQueue.Size(), ShouldEqual, 1)
 	})
 }
+
+func Test_evaluate_dirtiness(t *testing.T) {
+	testWorkspaces := []*internal.Workspace{
+		{Location: "root/workspace1", Name: "workspace1", IsDirty: false, Dependencies: []string{"dep1", "dep2"}},
+		{Location: "root/workspace2", Name: "workspace2", IsDirty: false, Dependencies: []string{"dep3", "dep4"}},
+		{Location: "root/workspace3", Name: "workspace3", IsDirty: false, Dependencies: []string{"dep4"}},
+		{Location: "root/workspace4", Name: "workspace4", IsDirty: false, Dependencies: []string{}},
+	}
+	Convey("dirty workspaces marked as expected", t, func() {
+		expected := []*internal.Workspace{}
+		for _, ws := range testWorkspaces {
+			newWs := new(internal.Workspace)
+			*newWs = *ws
+			expected = append(expected, newWs)
+		}
+		expected[0].IsDirty = true
+		expected[3].IsDirty = true
+		dirtyPaths := []string{"root/workspace1", "root/workspace4"}
+		internal.EvaluateDirtiness(testWorkspaces, dirtyPaths)
+		So(testWorkspaces, ShouldResemble, expected)
+	})
+}

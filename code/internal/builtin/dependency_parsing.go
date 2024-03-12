@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-const languageConfigPath = "/workspaces/butler/code/internal/builtin/config/languages.json"
+const languageConfigPath = "./builtin/config/languages.json"
 
 var execOutputStub = (*exec.Cmd).Output
 

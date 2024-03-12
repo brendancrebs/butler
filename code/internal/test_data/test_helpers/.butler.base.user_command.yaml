@@ -2,18 +2,32 @@
 # SEL Confidential
 
 paths:
+  workspace-root: "../.."
   allowed-paths:
     - test_repo
-  workspace-root: "./test_data/bad_configs/ignore_dir"
+
+  blocked-paths:
+    - ci/
+    - specs
+    - .devcontainer
 
 git:
-  git-repository: true
+  publish-branch: "main"
+  git-repository: false
+
+tasks:
+  should-run-all: false
+  should-lint: true
+  should-test: true
+  should-build: false
+  should-publish: false
 
 languages:
   - name: "golang"
-    fileExtension: ".go"
+    workspaceFile: "package.json"
+    builtinStdLibsMethod: false
     dependencyCommands:
-      externalDepCommand: "go run ./user_commands/go_external_deps_method.go"
+      externalDepCommand: "fail command"
     taskCommands: 
       lintCommand: "echo go lint command"
       testCommand: "echo go test command"

@@ -2,7 +2,7 @@
 # SEL Confidential
 
 paths:
-  workspace-root: "/workspaces/butler"
+  workspace-root: "../.."
   allowed-paths:
     - test_repo
 
@@ -13,8 +13,7 @@ paths:
     - bad_configs
 
 git:
-  publish-branch: "main"
-  git-repository: true
+  git-repository: false
 
 tasks:
   should-run-all: false
@@ -25,6 +24,8 @@ tasks:
 
 languages:
   - name: "invalid"
+    builtinStdLibsMethod: true
+    builtinExternalDepMethod: true
     dependencyCommands:
       externalDepCommand: "echo collect deps"
     taskCommands: 
