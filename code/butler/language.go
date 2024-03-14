@@ -1,7 +1,7 @@
 // Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 // SEL Confidential
 
-package internal
+package butler
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"selinc.com/butler/code/internal/builtin"
+	"selinc.com/butler/code/butler/builtin"
 )
 
 type Language struct {

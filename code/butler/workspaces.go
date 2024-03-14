@@ -1,14 +1,14 @@
 // Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 // SEL Confidential
 
-package internal
+package butler
 
 import (
 	"path/filepath"
 	"strings"
 	"sync"
 
-	"selinc.com/butler/code/internal/builtin"
+	"selinc.com/butler/code/butler/builtin"
 )
 
 type Workspace struct {

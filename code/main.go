@@ -4,10 +4,10 @@
 package main
 
 import (
-	"selinc.com/butler/code/internal"
+	"selinc.com/butler/code/butler"
 )
 
 // main is the entrance to butler.
 func main() {
-	internal.Execute()
+	butler.Execute()
 }

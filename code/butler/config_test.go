@@ -1,51 +1,51 @@
 // Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 // SEL Confidential
 
-package internal_test
+package butler_test
 
 import (
 	"testing"
 
-	"selinc.com/butler/code/internal"
+	"selinc.com/butler/code/butler"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func Test_loadConfig(t *testing.T) {
 	Convey("Ability to parse a yaml config for all of its values", t, func() {
-		temp := internal.ConfigPath
-		internal.ConfigPath = "./test_data/test_helpers/.butler.base.yaml"
+		temp := butler.ConfigPath
+		butler.ConfigPath = "./test_data/test_helpers/.butler.base.yaml"
 
-		expectedLanguage := &internal.Language{
+		expectedLanguage := &butler.Language{
 			Name:                     "golang",
 			FileExtension:            ".go",
 			BuiltinStdLibsMethod:     true,
 			BuiltinExternalDepMethod: true,
-			TaskExec: &internal.TaskCommands{
+			TaskExec: &butler.TaskCommands{
 				LintCommand:    "echo go lint command",
 				TestCommand:    "echo go test command",
 				BuildCommand:   "echo go build command",
 				PublishCommand: "echo go publish command",
 				SetUpCommands:  []string{"echo go test"},
 			},
-			DepCommands: &internal.DependencyCommands{
+			DepCommands: &butler.DependencyCommands{
 				ExternalDepCommand: "go run ./user_commands/go_external_deps_method.go",
 			},
 		}
 
-		config := &internal.ButlerConfig{}
-		expected := &internal.ButlerConfig{
-			Paths: &internal.ButlerPaths{
+		config := &butler.ButlerConfig{}
+		expected := &butler.ButlerConfig{
+			Paths: &butler.ButlerPaths{
 				AllowedPaths:    []string{"test_repo"},
 				BlockedPaths:    []string{"ci/", "specs", ".devcontainer", "bad_configs"},
 				WorkspaceRoot:   "../..",
-				ResultsFilePath: internal.ButlerResultsPath,
+				ResultsFilePath: butler.ButlerResultsPath,
 			},
-			Git: &internal.GitConfigurations{
+			Git: &butler.GitConfigurations{
 				PublishBranch: "main",
 				GitRepo:       true,
 			},
-			Task: &internal.TaskConfigurations{
+			Task: &butler.TaskConfigurations{
 				Coverage:      "0",
 				ShouldLint:    true,
 				ShouldTest:    true,
@@ -53,25 +53,25 @@ func Test_loadConfig(t *testing.T) {
 				ShouldPublish: false,
 				ShouldRunAll:  false,
 			},
-			Languages: []*internal.Language{expectedLanguage},
+			Languages: []*butler.Language{expectedLanguage},
 		}
 
-		err := config.Load(internal.ConfigPath)
-		internal.ConfigPath = temp
+		err := config.Load(butler.ConfigPath)
+		butler.ConfigPath = temp
 
 		So(err, ShouldBeNil)
 		So(config, ShouldResemble, expected)
 	})
 
 	Convey("Failure to parse config file is covered", t, func() {
-		temp := internal.ConfigPath
-		internal.ConfigPath = "./test_data/bad_configs/invalid.butler.bad"
+		temp := butler.ConfigPath
+		butler.ConfigPath = "./test_data/bad_configs/invalid.butler.bad"
 
-		config := &internal.ButlerConfig{}
-		expected := &internal.ButlerConfig{}
+		config := &butler.ButlerConfig{}
+		expected := &butler.ButlerConfig{}
 
-		err := config.Load(internal.ConfigPath)
-		internal.ConfigPath = temp
+		err := config.Load(butler.ConfigPath)
+		butler.ConfigPath = temp
 
 		So(err, ShouldNotBeNil)
 		So(config, ShouldResemble, expected)
@@ -79,40 +79,40 @@ func Test_loadConfig(t *testing.T) {
 }
 
 func Test_validateConfig(t *testing.T) {
-	testLanguage := &internal.Language{
+	testLanguage := &butler.Language{
 		Name: "test",
-		TaskExec: &internal.TaskCommands{
+		TaskExec: &butler.TaskCommands{
 			SetUpCommands: []string{"echo test"},
 		},
-		DepCommands: &internal.DependencyCommands{
+		DepCommands: &butler.DependencyCommands{
 			ExternalDepCommand: "echo get deps",
 		},
 	}
 
 	Convey("Catch config that doesn't have workspace root set", t, func() {
-		testConfig := &internal.ButlerConfig{
-			Paths: &internal.ButlerPaths{
+		testConfig := &butler.ButlerConfig{
+			Paths: &butler.ButlerPaths{
 				AllowedPaths: []string{"test_repo"},
 			},
-			Task: &internal.TaskConfigurations{
+			Task: &butler.TaskConfigurations{
 				Coverage: "100",
 			},
-			Languages: []*internal.Language{testLanguage},
+			Languages: []*butler.Language{testLanguage},
 		}
 		err := testConfig.ValidateConfig()
 		So(err.Error(), ShouldContainSubstring, "no workspace root has been set.\nPlease set a workspace root in the config")
 	})
 
 	Convey("Invalid coverage set in config.", t, func() {
-		testConfig := &internal.ButlerConfig{
-			Paths: &internal.ButlerPaths{
+		testConfig := &butler.ButlerConfig{
+			Paths: &butler.ButlerPaths{
 				AllowedPaths:  []string{"test_repo"},
 				WorkspaceRoot: "test_repo",
 			},
-			Task: &internal.TaskConfigurations{
+			Task: &butler.TaskConfigurations{
 				Coverage: "",
 			},
-			Languages: []*internal.Language{testLanguage},
+			Languages: []*butler.Language{testLanguage},
 		}
 		type template struct {
 			testValue     string
@@ -132,16 +132,16 @@ func Test_validateConfig(t *testing.T) {
 	})
 
 	Convey("git repo set to false in the absence of a publish branch", t, func() {
-		testConfig := &internal.ButlerConfig{
-			Paths: &internal.ButlerPaths{
+		testConfig := &butler.ButlerConfig{
+			Paths: &butler.ButlerPaths{
 				AllowedPaths:  []string{"test_repo"},
 				WorkspaceRoot: "test_repo",
 			},
-			Task: &internal.TaskConfigurations{
+			Task: &butler.TaskConfigurations{
 				Coverage: "100",
 			},
-			Languages: []*internal.Language{testLanguage},
-			Git: &internal.GitConfigurations{
+			Languages: []*butler.Language{testLanguage},
+			Git: &butler.GitConfigurations{
 				PublishBranch: "",
 			},
 		}
@@ -152,15 +152,15 @@ func Test_validateConfig(t *testing.T) {
 	})
 
 	Convey("no languages added to config", t, func() {
-		testConfig := &internal.ButlerConfig{
-			Paths: &internal.ButlerPaths{
+		testConfig := &butler.ButlerConfig{
+			Paths: &butler.ButlerPaths{
 				AllowedPaths:  []string{"test_repo"},
 				WorkspaceRoot: "test_repo",
 			},
-			Task: &internal.TaskConfigurations{
+			Task: &butler.TaskConfigurations{
 				Coverage: "100",
 			},
-			Git: &internal.GitConfigurations{
+			Git: &butler.GitConfigurations{
 				PublishBranch: "main",
 			},
 		}
@@ -170,15 +170,15 @@ func Test_validateConfig(t *testing.T) {
 	})
 
 	Convey("no allowed paths added to config", t, func() {
-		testConfig := &internal.ButlerConfig{
-			Paths: &internal.ButlerPaths{
+		testConfig := &butler.ButlerConfig{
+			Paths: &butler.ButlerPaths{
 				WorkspaceRoot: "test_repo",
 			},
-			Task: &internal.TaskConfigurations{
+			Task: &butler.TaskConfigurations{
 				Coverage: "100",
 			},
-			Languages: []*internal.Language{testLanguage},
-			Git: &internal.GitConfigurations{
+			Languages: []*butler.Language{testLanguage},
+			Git: &butler.GitConfigurations{
 				PublishBranch: "main",
 			},
 		}
@@ -190,13 +190,13 @@ func Test_validateConfig(t *testing.T) {
 
 func Test_loadButlerIgnore(t *testing.T) {
 	Convey("Paths successfully parsed from .butler.ignore.", t, func() {
-		testConfig := &internal.ButlerConfig{
-			Paths: &internal.ButlerPaths{
+		testConfig := &butler.ButlerConfig{
+			Paths: &butler.ButlerPaths{
 				WorkspaceRoot: "./test_data/test_helpers",
 			},
 		}
-		expected := &internal.ButlerConfig{
-			Paths: &internal.ButlerPaths{
+		expected := &butler.ButlerConfig{
+			Paths: &butler.ButlerPaths{
 				AllowedPaths:  []string{"good_path"},
 				BlockedPaths:  []string{"bad_path"},
 				WorkspaceRoot: "./test_data/test_helpers",
@@ -208,8 +208,8 @@ func Test_loadButlerIgnore(t *testing.T) {
 		So(testConfig, ShouldResemble, expected)
 	})
 	Convey("Nothing returned if no .butler.ignore file is found.", t, func() {
-		testConfig := &internal.ButlerConfig{
-			Paths: &internal.ButlerPaths{
+		testConfig := &butler.ButlerConfig{
+			Paths: &butler.ButlerPaths{
 				WorkspaceRoot: "/",
 			},
 		}
@@ -220,8 +220,8 @@ func Test_loadButlerIgnore(t *testing.T) {
 		So(testConfig.Paths.BlockedPaths, ShouldBeNil)
 	})
 	Convey("Failure to parse .butler.ignore.", t, func() {
-		testConfig := &internal.ButlerConfig{
-			Paths: &internal.ButlerPaths{
+		testConfig := &butler.ButlerConfig{
+			Paths: &butler.ButlerPaths{
 				WorkspaceRoot: "./test_data/bad_configs",
 			},
 		}

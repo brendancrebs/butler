@@ -1,7 +1,7 @@
 // Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 // SEL Confidential
 
-package internal
+package butler
 
 import (
 	"os/exec"

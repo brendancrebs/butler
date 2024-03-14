@@ -1,12 +1,12 @@
 // Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 // SEL Confidential
 
-package internal_test
+package butler_test
 
 import (
 	"testing"
 
-	"selinc.com/butler/code/internal"
+	"selinc.com/butler/code/butler"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -30,17 +30,17 @@ func Test_criticalFolderChanged(t *testing.T) {
 
 	for _, test := range tests {
 		Convey(test.desc, t, func() {
-			So(internal.CriticalPathChanged(test.dirtyFolders, test.criticalFolders), ShouldResemble, test.expected)
+			So(butler.CriticalPathChanged(test.dirtyFolders, test.criticalFolders), ShouldResemble, test.expected)
 		})
 	}
 }
 
 func Test_queue(t *testing.T) {
 	Convey("Queue can push and pop as expected.", t, func() {
-		testQueue := &internal.Queue{Tasks: make([]*internal.Task, 0)}
-		testQueue.Enqueue(&internal.Task{})
-		testQueue.Enqueue(&internal.Task{})
-		testQueue.Enqueue(&internal.Task{})
+		testQueue := &butler.Queue{Tasks: make([]*butler.Task, 0)}
+		testQueue.Enqueue(&butler.Task{})
+		testQueue.Enqueue(&butler.Task{})
+		testQueue.Enqueue(&butler.Task{})
 		So(testQueue.Size(), ShouldEqual, 3)
 
 		testQueue.Dequeue()
@@ -50,23 +50,23 @@ func Test_queue(t *testing.T) {
 }
 
 func Test_evaluate_dirtiness(t *testing.T) {
-	testWorkspaces := []*internal.Workspace{
+	testWorkspaces := []*butler.Workspace{
 		{Location: "root/workspace1", Name: "workspace1", IsDirty: false, Dependencies: []string{"dep1", "dep2"}},
 		{Location: "root/workspace2", Name: "workspace2", IsDirty: false, Dependencies: []string{"dep3", "dep4"}},
 		{Location: "root/workspace3", Name: "workspace3", IsDirty: false, Dependencies: []string{"dep4"}},
 		{Location: "root/workspace4", Name: "workspace4", IsDirty: false, Dependencies: []string{}},
 	}
 	Convey("dirty workspaces marked as expected", t, func() {
-		expected := []*internal.Workspace{}
+		expected := []*butler.Workspace{}
 		for _, ws := range testWorkspaces {
-			newWs := new(internal.Workspace)
+			newWs := new(butler.Workspace)
 			*newWs = *ws
 			expected = append(expected, newWs)
 		}
 		expected[0].IsDirty = true
 		expected[3].IsDirty = true
 		dirtyPaths := []string{"root/workspace1", "root/workspace4"}
-		internal.EvaluateDirtiness(testWorkspaces, dirtyPaths)
+		butler.EvaluateDirtiness(testWorkspaces, dirtyPaths)
 		So(testWorkspaces, ShouldResemble, expected)
 	})
 }
