@@ -5,6 +5,7 @@ package butler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -17,14 +18,13 @@ import (
 
 type Language struct {
 	Name                      string              `yaml:"name,omitempty"`
-	FileExtension             string              `yaml:"fileExtension,omitempty"`
-	WorkspaceFile             string              `yaml:"workspaceFile,omitempty"`
 	VersionPath               string              `yaml:"versionPath,omitempty"`
 	TaskExec                  *TaskCommands       `yaml:"taskCommands,omitempty"`
 	DepCommands               *DependencyCommands `yaml:"dependencyCommands,omitempty"`
 	Workspaces                []*Workspace        `yaml:"workspaces,omitempty"`
 	StdLibDeps                []string            `yaml:"stdLibDeps,omitempty"`
 	ExternalDeps              []string            `yaml:"externalDeps,omitempty"`
+	FilePatterns              []string            `yaml:"filePatterns,omitempty"`
 	BuiltinStdLibsMethod      bool                `yaml:"builtinStdLibsMethod,omitempty"`
 	BuiltinWorkspaceDepMethod bool                `yaml:"builtinWorkspaceDepMethod,omitempty"`
 	BuiltinExternalDepMethod  bool                `yaml:"builtinExternalDepMethod,omitempty"`
@@ -33,22 +33,15 @@ type Language struct {
 
 type TaskCommands struct {
 	SetUpCommands  []string `yaml:"setUpCommands,omitempty"`
-	LintPath       string   `yaml:"lintPath,omitempty"`
 	LintCommand    string   `yaml:"lintCommand,omitempty"`
-	TestPath       string   `yaml:"testPath,omitempty"`
 	TestCommand    string   `yaml:"testCommand,omitempty"`
-	BuildPath      string   `yaml:"buildPath,omitempty"`
 	BuildCommand   string   `yaml:"buildCommand,omitempty"`
-	PublishPath    string   `yaml:"publishPath,omitempty"`
 	PublishCommand string   `yaml:"publishCommand,omitempty"`
 }
 
 type DependencyCommands struct {
-	StdLibsPath         string `yaml:"stdLibsPath,omitempty"`
 	StdLibsCommand      string `yaml:"stdLibsCommand,omitempty"`
-	WorkspaceDepPath    string `yaml:"internalDepPath,omitempty"`
 	WorkspaceDepCommand string `yaml:"internalDepCommand,omitempty"`
-	ExternalDepPath     string `yaml:"externalDepPath,omitempty"`
 	ExternalDepCommand  string `yaml:"externalDepCommand,omitempty"`
 }
 
@@ -59,40 +52,38 @@ func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	// The calls for createTasks are in separate loops so lint tasks for all languages will be first
 	// in queue and so on for the other task types.
 	for _, lang := range bc.Languages {
-		lang.CreateTasks(taskQueue, BuildStepLint, lang.TaskExec.LintCommand, lang.TaskExec.LintPath)
+		lang.createTasks(taskQueue, BuildStepLint, lang.TaskExec.LintCommand)
 	}
 	for _, lang := range bc.Languages {
-		lang.CreateTasks(taskQueue, BuildStepTest, lang.TaskExec.TestCommand, lang.TaskExec.TestPath)
+		lang.createTasks(taskQueue, BuildStepTest, lang.TaskExec.TestCommand)
 	}
 	for _, lang := range bc.Languages {
-		lang.CreateTasks(taskQueue, BuildStepBuild, lang.TaskExec.BuildCommand, lang.TaskExec.BuildPath)
+		lang.createTasks(taskQueue, BuildStepBuild, lang.TaskExec.BuildCommand)
 	}
 	for _, lang := range bc.Languages {
-		lang.CreateTasks(taskQueue, BuildStepPublish, lang.TaskExec.PublishCommand, lang.TaskExec.PublishPath)
+		lang.createTasks(taskQueue, BuildStepPublish, lang.TaskExec.PublishCommand)
 	}
 
 	fmt.Fprintf(cmd.OutOrStdout(), "Done. %s\n\n", time.Since(now).String())
 }
 
 // Executes commands that must be run before the creation of tasks
-func PreliminaryCommands(langs []*Language) (err error) {
-	for _, lang := range langs {
-		for _, cmd := range lang.TaskExec.SetUpCommands {
-			fmt.Printf("\nexecuting: %s...  ", cmd)
+func (lang *Language) preliminaryCommands() (err error) {
+	for _, cmd := range lang.TaskExec.SetUpCommands {
+		fmt.Printf("\nexecuting: %s...  ", cmd)
 
-			commandParts := splitCommand(cmd)
-			if len(commandParts) == 0 {
-				fmt.Println("empty command, skipping")
-				continue
-			}
-			cmd := exec.Command(commandParts[0], commandParts[1:]...)
+		commandParts := splitCommand(cmd)
+		if len(commandParts) == 0 {
+			fmt.Println("empty command, skipping")
+			continue
+		}
+		cmd := exec.Command(commandParts[0], commandParts[1:]...)
 
-			if output, err := execOutputStub(cmd); err != nil {
-				err = fmt.Errorf("error executing '%s'\nerror: %v\noutput: %v", cmd, err, output)
-				return err
-			} else {
-				fmt.Printf("success\n")
-			}
+		if output, err := execOutputStub(cmd); err != nil {
+			err = fmt.Errorf("error executing '%s'\nerror: %v\noutput: %v", cmd, err, output)
+			return err
+		} else {
+			fmt.Printf("success\n")
 		}
 	}
 	return
@@ -105,16 +96,13 @@ func splitCommand(cmd string) []string {
 	return commandParts
 }
 
-func ExecuteUserMethods(cmd, path, name string) (response []string, err error) {
+func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 	commandParts := splitCommand(cmd)
 	if len(commandParts) == 0 {
 		err = fmt.Errorf("dependency commands not supplied for the language %s", name)
 		return
 	}
 	execCmd := exec.Command(commandParts[0], commandParts[1:]...)
-	if path != "" {
-		execCmd.Dir = path
-	}
 	stdout, _ := execCmd.StdoutPipe()
 
 	if err = execStartStub(execCmd); err != nil {
@@ -140,24 +128,25 @@ func ExecuteUserMethods(cmd, path, name string) (response []string, err error) {
 }
 
 func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
-	lang.Name, err = builtin.GetLanguageId(lang.Name)
+	if lang.BuiltinStdLibsMethod {
+		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
+	} else {
+		lang.StdLibDeps, err = ExecuteUserMethods(lang.DepCommands.StdLibsCommand, lang.Name)
+	}
 	if err != nil {
 		return
 	}
 
-	if lang.BuiltinStdLibsMethod {
-		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
+	if lang.BuiltinExternalDepMethod {
+		lang.ExternalDeps, err = builtin.GetExternalDependencies(lang.Name)
 	} else {
-		lang.StdLibDeps, err = ExecuteUserMethods(lang.DepCommands.ExternalDepCommand, lang.DepCommands.ExternalDepPath, lang.Name)
-	}
-	if err != nil {
-		return
+		lang.ExternalDeps, err = ExecuteUserMethods(lang.DepCommands.ExternalDepCommand, lang.Name)
 	}
 
 	return
 }
 
-func (lang *Language) CreateTasks(taskQueue *Queue, step BuildStep, command, commandPath string) {
+func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, command string) {
 	for _, ws := range lang.Workspaces {
 		if ws.IsDirty {
 			command = replaceSubstring(command, "%w", ws.Location)
@@ -175,4 +164,14 @@ func (lang *Language) CreateTasks(taskQueue *Queue, step BuildStep, command, com
 // formats command strings from the butler config
 func replaceSubstring(input string, substring string, path string) string {
 	return strings.ReplaceAll(input, substring, path)
+}
+
+func (lang *Language) validateLanguage() error {
+	if lang.Name == "" {
+		return errors.New("a language supplied in the config without a name. Please supply a language identifier for each language in the config")
+	}
+	if len(lang.FilePatterns) < 1 {
+		return fmt.Errorf("no file patterns supplied for '%s'. Please see the 'FilePatterns' options in the config spec for more information", lang.Name)
+	}
+	return nil
 }

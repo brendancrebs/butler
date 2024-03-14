@@ -62,7 +62,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
@@ -85,7 +85,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--cfg", "./test_data/test_configs/.butler.base.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
@@ -109,7 +109,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--cfg", "./test_data/test_configs/.butler.base.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "branch", "--show-current"}) {
 				gitBranchReturn, _ := json.Marshal(currBranch)
@@ -130,7 +130,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.no_git.yaml", "--all"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.no_git.yaml", "--all"})
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
@@ -142,44 +142,44 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.invalid.bad"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.invalid.bad"})
 		Execute()
 
 		// butler_results.json should still exist despite error
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
-		So(stderr.String(), ShouldContainSubstring, "Error: stat ./test_data/test_helpers/.butler.invalid.bad: no such file or directory")
+		So(stderr.String(), ShouldContainSubstring, "Error: stat ./test_data/test_configs/.butler.invalid.bad: no such file or directory")
 	})
 
 	Convey("config parse fails from path being invalid.", t, func() {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/bad_ignore_configs"})
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
-		So(stderr.String(), ShouldContainSubstring, "Error: read ./test_data/bad_configs: is a directory")
+		So(stderr.String(), ShouldContainSubstring, "Error: read ./test_data/test_configs/bad_ignore_configs: is a directory")
 	})
 
 	Convey(".ignore parse fails from inability to read file", t, func() {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs/ignore_dir/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/bad_ignore_configs/ignore_dir/.butler.base.yaml"})
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
-		So(stderr.String(), ShouldContainSubstring, "Error: read test_data/bad_configs/ignore_dir/.butler.ignore.yaml: is a directory")
+		So(stderr.String(), ShouldContainSubstring, "Error: read test_data/test_configs/bad_ignore_configs/ignore_dir/.butler.ignore.yaml: is a directory")
 	})
 
 	Convey(".ignore parse fails due to bad syntax", t, func() {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/bad_configs/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/bad_ignore_configs/.butler.base.yaml"})
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
@@ -197,7 +197,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
@@ -224,7 +224,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				return nil, errors.New("git diff failed")
@@ -245,7 +245,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.bad_command.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.bad_command.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{"fail", "command"}) {
 				return nil, errors.New("test command failed")
@@ -263,10 +263,10 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.invalid_lang.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.invalid_lang.yaml"})
 
 		Execute()
-		So(stderr.String(), ShouldContainSubstring, "Error: error getting language id for invalid: Language not found")
+		So(stderr.String(), ShouldContainSubstring, "Error: language id 'invalid' not found")
 	})
 
 	Convey("Butler fails when dependency parsing fails", t, func() {
@@ -276,7 +276,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_helpers/.butler.base.user_command.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.user_command.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})

@@ -11,10 +11,6 @@ paths:
     - specs
     - .devcontainer
 
-git:
-  publish-branch: "main"
-  git-repository: false
-
 tasks:
   should-run-all: false
   should-lint: true
@@ -24,10 +20,12 @@ tasks:
 
 languages:
   - name: "golang"
-    workspaceFile: "package.json"
-    builtinStdLibsMethod: false
-    dependencyCommands:
-      externalDepCommand: "fail command"
+    filePatterns: 
+      - "package.json"
+    builtinStdLibsMethod: true
+    builtinInternalDepMethod: true
+    builtinExternalDepMethod: true
+
     taskCommands: 
       lintCommand: "echo go lint command"
       testCommand: "echo go test command"

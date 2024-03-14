@@ -39,14 +39,14 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 		return
 	}
 
-	if err = PreliminaryCommands(bc.Languages); err != nil {
-		return
-	}
-
 	for _, lang := range bc.Languages {
+		if err = lang.preliminaryCommands(); err != nil {
+			return
+		}
 		if err = lang.getExternalDeps(bc); err != nil {
 			return
 		}
+		dirtyFolders = append(dirtyFolders, lang.ExternalDeps...)
 
 		lang.Workspaces = getWorkspaces(lang, allPaths)
 	}
@@ -63,8 +63,8 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, err error) {
 	allPaths = getFilePaths([]string{bc.Paths.WorkspaceRoot}, bc.Paths.AllowedPaths, bc.Paths.BlockedPaths, true)
 
-	if bc.Git.GitRepo && !bc.Task.ShouldRunAll {
-		allDirtyPaths, err := getDirtyPaths(bc.Git.PublishBranch)
+	if bc.PublishBranch != "" && !bc.Task.ShouldRunAll {
+		allDirtyPaths, err := getDirtyPaths(bc.PublishBranch)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -87,8 +87,8 @@ func shouldRunAll(bc *ButlerConfig, allDirtyPaths, dirtyFolders []string) (err e
 		return
 	}
 
-	bc.Task.ShouldRunAll = strings.EqualFold(GetEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.Git.PublishBranch
-	bc.Task.ShouldPublish = currentBranch == bc.Git.PublishBranch
+	bc.Task.ShouldRunAll = strings.EqualFold(GetEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
+	bc.Task.ShouldPublish = currentBranch == bc.PublishBranch
 	bc.Task.ShouldRunAll = bc.Task.ShouldRunAll || CriticalPathChanged(allDirtyPaths, bc.Paths.CriticalPaths)
 
 	return

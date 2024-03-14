@@ -13,18 +13,17 @@ import (
 
 type Workspace struct {
 	Location     string
-	Name         string
 	IsDirty      bool
 	Dependencies []string
 }
 
 // Collects workspaces for a language
 func getWorkspaces(lang *Language, paths []string) (workspaces []*Workspace) {
-	var allDirs map[string]bool
-	if lang.WorkspaceFile != "" {
-		allDirs = getMatchingDirs(paths, lang.WorkspaceFile)
-	} else {
-		allDirs = getMatchingDirs(paths, lang.FileExtension)
+	allDirs := make(map[string]bool)
+	for _, pattern := range lang.FilePatterns {
+		for k, v := range getMatchingDirs(paths, pattern) {
+			allDirs[k] = v
+		}
 	}
 
 	workspaces = concurrentGetWorkspaces(lang.Name, lang.StdLibDeps, allDirs)

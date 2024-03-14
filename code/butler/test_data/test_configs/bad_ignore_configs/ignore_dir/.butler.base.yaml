@@ -1,33 +1,17 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
 
+publish-branch: "main"
+
 paths:
-  workspace-root: "../.."
   allowed-paths:
     - test_repo
-
-  blocked-paths:
-    - ci/
-    - specs
-    - .devcontainer
-    - bad_configs
-
-git:
-  publish-branch: "main"
-  git-repository: true
-
-tasks:
-  should-run-all: false
-  should-lint: true
-  should-test: true
-  should-build: false
-  should-publish: false
+  workspace-root: "./test_data/test_configs/bad_ignore_configs/ignore_dir"
 
 languages:
   - name: "golang"
-    fileExtension: ".go"
-    builtinStdLibsMethod: true
-    builtinExternalDepMethod: true
+    filePatterns: 
+      - ".go"
     dependencyCommands:
       externalDepCommand: "go run ./user_commands/go_external_deps_method.go"
     taskCommands: 

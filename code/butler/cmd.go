@@ -19,6 +19,7 @@ const (
 	envPublish         = "BUTLER_SHOULD_PUBLISH"
 	envBitbucketCommit = "GIT_COMMIT"
 	envBranch          = "GIT_BRANCH"
+	envWorkspaceRoot   = "WORKSPACE_ROOT"
 )
 
 func getCommand() *cobra.Command {
@@ -39,7 +40,6 @@ var (
 	cmd   = getCommand()
 	flags = &ButlerConfig{
 		Paths: &ButlerPaths{},
-		Git:   &GitConfigurations{},
 		Task:  &TaskConfigurations{},
 	}
 	execOutputStub = (*exec.Cmd).Output
@@ -71,10 +71,7 @@ func parseFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldPublish, "publish", "p", false,
 		"Enables publishing.  Publishing also requires --publish-branch and --build-id.")
 
-	cmd.PersistentFlags().BoolVarP(&flags.Git.GitRepo, "git-repository", "g", false,
-		"sets whether the repository is a git repository or not.")
-
-	cmd.PersistentFlags().StringVar(&flags.Git.PublishBranch, "publish-branch", envBranchName,
+	cmd.PersistentFlags().StringVar(&flags.PublishBranch, "publish-branch", envBranchName,
 		"Branch when we will publish or diff to, based on equality to current branch name.")
 
 	cmd.PersistentFlags().StringVar(&flags.Paths.WorkspaceRoot, "workspace-root", ".",

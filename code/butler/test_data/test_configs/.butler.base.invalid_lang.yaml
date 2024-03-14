@@ -12,9 +12,6 @@ paths:
     - .devcontainer
     - bad_configs
 
-git:
-  git-repository: false
-
 tasks:
   should-run-all: false
   should-lint: true
@@ -24,7 +21,10 @@ tasks:
 
 languages:
   - name: "invalid"
+    filePatterns:
+      - "invalid.bad"
     builtinStdLibsMethod: true
+    builtinInternalDepMethod: true
     builtinExternalDepMethod: true
     dependencyCommands:
       externalDepCommand: "echo collect deps"

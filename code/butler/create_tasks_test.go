@@ -51,10 +51,10 @@ func Test_queue(t *testing.T) {
 
 func Test_evaluate_dirtiness(t *testing.T) {
 	testWorkspaces := []*butler.Workspace{
-		{Location: "root/workspace1", Name: "workspace1", IsDirty: false, Dependencies: []string{"dep1", "dep2"}},
-		{Location: "root/workspace2", Name: "workspace2", IsDirty: false, Dependencies: []string{"dep3", "dep4"}},
-		{Location: "root/workspace3", Name: "workspace3", IsDirty: false, Dependencies: []string{"dep4"}},
-		{Location: "root/workspace4", Name: "workspace4", IsDirty: false, Dependencies: []string{}},
+		{Location: "root/workspace1", IsDirty: false, Dependencies: []string{"dep1", "dep2"}},
+		{Location: "root/workspace2", IsDirty: false, Dependencies: []string{"dep3", "dep4"}},
+		{Location: "root/workspace3", IsDirty: false, Dependencies: []string{"dep4"}},
+		{Location: "root/workspace4", IsDirty: false, Dependencies: []string{}},
 	}
 	Convey("dirty workspaces marked as expected", t, func() {
 		expected := []*butler.Workspace{}

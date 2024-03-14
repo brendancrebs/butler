@@ -28,7 +28,6 @@ func (status BuildStatus) String() string {
 }
 
 // BuildStep governs the priority that a task is run at.
-// Used for sorting the tasks returns by the language level ShouldBLT calls.
 type BuildStep int
 
 // BuildStep enum values.

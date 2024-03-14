@@ -28,14 +28,14 @@ func Test_createTasks(t *testing.T) {
 				ExternalDepCommand: "echo go external dep command",
 			},
 			Workspaces: []*Workspace{
-				{Location: "./test_data/test_repo/go_test", Name: "go_test", IsDirty: true, Dependencies: []string{}},
-				{Location: "./test_data/test_repo", Name: "go_test2", IsDirty: true, Dependencies: []string{}},
-				{Location: "./test_data", Name: "go_test3", IsDirty: true, Dependencies: []string{}},
+				{Location: "./test_data/test_repo/go_test", IsDirty: true, Dependencies: []string{}},
+				{Location: "./test_data/test_repo", IsDirty: true, Dependencies: []string{}},
+				{Location: "./test_data", IsDirty: true, Dependencies: []string{}},
 			},
 		}
 		testQueue := &Queue{}
 
-		inputLanguage.CreateTasks(testQueue, BuildStepTest, inputLanguage.TaskExec.LintCommand, inputLanguage.TaskExec.LintPath)
+		inputLanguage.createTasks(testQueue, BuildStepTest, inputLanguage.TaskExec.LintCommand)
 		So(inputLanguage.Workspaces, ShouldNotBeNil)
 	})
 }
@@ -55,7 +55,7 @@ func Test_preliminaryCommands(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		err := PreliminaryCommands(langs)
+		err := langs[0].preliminaryCommands()
 
 		w.Close()
 		out, _ := io.ReadAll(r)
@@ -78,16 +78,15 @@ func Test_preliminaryCommands(t *testing.T) {
 			return nil, nil
 		}
 
-		err := PreliminaryCommands(langs)
+		err := langs[0].preliminaryCommands()
 		So(err.Error(), ShouldContainSubstring, "error executing 'fail command'\nerror: test command failed\noutput:")
 	})
 }
 
 func Test_executeUserMethods(t *testing.T) {
-	testPath := "."
 	testLangName := "test"
 	Convey("error on empty user method", t, func() {
-		_, err := ExecuteUserMethods("", testPath, testLangName)
+		_, err := ExecuteUserMethods("", testLangName)
 		So(err.Error(), ShouldResemble, "dependency commands not supplied for the language test")
 	})
 
@@ -101,7 +100,7 @@ func Test_executeUserMethods(t *testing.T) {
 			}
 			return nil
 		}
-		_, err := ExecuteUserMethods("fail command", testPath, testLangName)
+		_, err := ExecuteUserMethods("fail command", testLangName)
 		So(err.Error(), ShouldResemble, "error starting execution of 'fail command': test command start failed")
 	})
 
@@ -114,7 +113,7 @@ func Test_executeUserMethods(t *testing.T) {
 		readStub = func(reader io.Reader, buffer []byte) (int, error) {
 			return 0, errors.New("failed to read")
 		}
-		_, err := ExecuteUserMethods("fail command", testPath, testLangName)
+		_, err := ExecuteUserMethods("fail command", testLangName)
 		So(err.Error(), ShouldResemble, "error executing 'fail command': failed to read")
 	})
 
@@ -134,7 +133,26 @@ func Test_executeUserMethods(t *testing.T) {
 			}
 			return nil
 		}
-		_, err := ExecuteUserMethods("fail command", testPath, testLangName)
+		_, err := ExecuteUserMethods("fail command", testLangName)
 		So(err.Error(), ShouldResemble, "error executing 'fail command': test command wait failed")
 	})
+}
+
+func Test_validateLanguage(t *testing.T) {
+	type template struct {
+		desc          string
+		language      *Language
+		expectedError error
+	}
+	tests := []template{
+		{"language config validation passes", &Language{Name: "test", FilePatterns: []string{".test"}}, nil},
+		{"fails when a name id is not provided", &Language{FilePatterns: []string{".test"}}, errors.New("a language supplied in the config without a name. Please supply a language identifier for each language in the config")},
+		{"fails when no file patterns are supplied", &Language{Name: "test"}, errors.New("no file patterns supplied for 'test'. Please see the 'FilePatterns' options in the config spec for more information")},
+	}
+
+	for _, test := range tests {
+		Convey(test.desc, t, func() {
+			So(test.language.validateLanguage(), ShouldResemble, test.expectedError)
+		})
+	}
 }

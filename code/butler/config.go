@@ -38,11 +38,6 @@ type ButlerPaths struct {
 	ResultsFilePath string   `yaml:"results-file-path,omitempty"`
 }
 
-type GitConfigurations struct {
-	PublishBranch string `yaml:"publish-branch,omitempty"`
-	GitRepo       bool   `yaml:"git-repository,omitempty"`
-}
-
 type TaskConfigurations struct {
 	Coverage      string `yaml:"coverage,omitempty"`
 	ShouldRunAll  bool   `yaml:"should-run-all,omitempty"`
@@ -54,14 +49,14 @@ type TaskConfigurations struct {
 
 // ButlerConfig specifies the Butler configuration options.
 type ButlerConfig struct {
-	Paths     *ButlerPaths        `yaml:"paths,omitempty"`
-	Git       *GitConfigurations  `yaml:"git,omitempty"`
-	Task      *TaskConfigurations `yaml:"tasks,omitempty"`
-	Languages []*Language         `yaml:"languages,omitempty"`
+	PublishBranch string              `yaml:"publish-branch,omitempty"`
+	Paths         *ButlerPaths        `yaml:"paths,omitempty"`
+	Task          *TaskConfigurations `yaml:"tasks,omitempty"`
+	Languages     []*Language         `yaml:"languages,omitempty"`
 }
 
 func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConfig) {
-	bc.Git.PublishBranch = useFlagIfChanged(bc.Git.PublishBranch, flags.Git.PublishBranch,
+	bc.PublishBranch = useFlagIfChanged(bc.PublishBranch, flags.PublishBranch,
 		cmd.Flags().Changed("publish-branch"))
 	bc.Paths.WorkspaceRoot = useFlagIfChanged(bc.Paths.WorkspaceRoot, flags.Paths.WorkspaceRoot,
 		cmd.Flags().Changed("workspace-root"))
@@ -103,12 +98,9 @@ func (bc *ButlerConfig) Load(configPath string) (err error) {
 func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	type defaultConfig ButlerConfig
 	defaults := defaultConfig{
+		PublishBranch: envBranchName,
 		Paths: &ButlerPaths{
 			ResultsFilePath: butlerResultsPath,
-		},
-		Git: &GitConfigurations{
-			PublishBranch: envBranchName,
-			GitRepo:       false,
 		},
 		Task: &TaskConfigurations{
 			Coverage:      "0",
@@ -128,10 +120,12 @@ func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// Checks that fields critical for Butler operation have been correctly supplied to the config file.
 func (bc *ButlerConfig) ValidateConfig() error {
 	if bc.Paths.WorkspaceRoot == "" {
 		return errors.New("no workspace root has been set.\nPlease set a workspace root in the config")
 	}
+	os.Setenv(envWorkspaceRoot, bc.Paths.WorkspaceRoot)
 	if bc.Task.Coverage != "" {
 		cover, err := strconv.Atoi(bc.Task.Coverage)
 		if err != nil {
@@ -141,14 +135,18 @@ func (bc *ButlerConfig) ValidateConfig() error {
 			return fmt.Errorf(`the test coverage threshold has been set to %d in the config. Please set coverage to a number between 0 and 100`, cover)
 		}
 	}
-	if bc.Languages == nil {
-		return errors.New(`no languages have been provided in the config`)
-	}
+
 	if bc.Paths.AllowedPaths == nil {
 		return errors.New(`butler has not been given permission to search for workspaces in any directories.\n Please enter a list of directories in the 'allowed-paths' config field`)
 	}
-	if bc.Git.PublishBranch == "" {
-		bc.Git.GitRepo = false
+
+	if bc.Languages == nil {
+		return errors.New(`no languages have been provided in the config`)
+	}
+	for _, lang := range bc.Languages {
+		if err := lang.validateLanguage(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
