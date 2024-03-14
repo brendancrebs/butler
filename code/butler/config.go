@@ -19,14 +19,14 @@ import (
 const (
 	configFileName    = ".butler.base.yaml"
 	ignoreFileName    = ".butler.ignore.yaml"
-	GitCommand        = "git"
-	ButlerResultsPath = "./butler_results.json"
+	gitCommand        = "git"
+	butlerResultsPath = "./butler_results.json"
 	defaultCoverage   = "0"
 )
 
 var (
 	envShouldPublish, _ = strconv.ParseBool(GetEnvOrDefault(envPublish, "false"))
-	envBranchName       = strings.TrimSpace(GetEnvOrDefault(EnvBranch, ""))
+	envBranchName       = strings.TrimSpace(GetEnvOrDefault(envBranch, ""))
 )
 
 // ButlerPaths specifies the allowed and blocked paths within the .butler.ignore.yaml.
@@ -90,6 +90,10 @@ func (bc *ButlerConfig) Load(configPath string) (err error) {
 		return
 	}
 
+	if err = bc.LoadButlerIgnore(); err != nil {
+		return
+	}
+
 	err = bc.ValidateConfig()
 	return
 }
@@ -100,7 +104,7 @@ func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	type defaultConfig ButlerConfig
 	defaults := defaultConfig{
 		Paths: &ButlerPaths{
-			ResultsFilePath: ButlerResultsPath,
+			ResultsFilePath: butlerResultsPath,
 		},
 		Git: &GitConfigurations{
 			PublishBranch: envBranchName,

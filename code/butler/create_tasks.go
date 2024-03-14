@@ -14,26 +14,26 @@ import (
 )
 
 type Queue struct {
-	Tasks []*Task
+	tasks []*Task
 }
 
 func (q *Queue) Enqueue(task *Task) {
-	q.Tasks = append(q.Tasks, task)
+	q.tasks = append(q.tasks, task)
 }
 
 func (q *Queue) Dequeue() *Task {
-	task := q.Tasks[0]
-	q.Tasks = q.Tasks[1:]
+	task := q.tasks[0]
+	q.tasks = q.tasks[1:]
 	return task
 }
 
 func (q *Queue) Size() int {
-	return len(q.Tasks)
+	return len(q.tasks)
 }
 
 // This function will return a queue populated with tasks
-func GetTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error) {
-	taskQueue = &Queue{Tasks: make([]*Task, 0)}
+func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error) {
+	taskQueue = &Queue{tasks: make([]*Task, 0)}
 	allPaths, dirtyFolders, err := butlerSetup(bc)
 	if err != nil {
 		return
@@ -55,7 +55,7 @@ func GetTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 		EvaluateDirtiness(lang.Workspaces, dirtyFolders)
 	}
 
-	PopulateTaskQueue(bc, taskQueue, cmd)
+	populateTaskQueue(bc, taskQueue, cmd)
 
 	return
 }
@@ -82,12 +82,12 @@ func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, er
 // Determines if Butler requires a full build.
 func shouldRunAll(bc *ButlerConfig, allDirtyPaths, dirtyFolders []string) (err error) {
 	// get current git branch name
-	currentBranch, err := GetCurrentBranch()
+	currentBranch, err := getCurrentBranch()
 	if err != nil {
 		return
 	}
 
-	bc.Task.ShouldRunAll = strings.EqualFold(GetEnvOrDefault(EnvRunAll, ""), "true") || currentBranch == bc.Git.PublishBranch
+	bc.Task.ShouldRunAll = strings.EqualFold(GetEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.Git.PublishBranch
 	bc.Task.ShouldPublish = currentBranch == bc.Git.PublishBranch
 	bc.Task.ShouldRunAll = bc.Task.ShouldRunAll || CriticalPathChanged(allDirtyPaths, bc.Paths.CriticalPaths)
 
@@ -96,14 +96,14 @@ func shouldRunAll(bc *ButlerConfig, allDirtyPaths, dirtyFolders []string) (err e
 
 // getCurrentBranch returns the whitespace trimmed result of `git branch --show-current`
 // which should be the branch, or an error.
-func GetCurrentBranch() (branch string, err error) {
-	if branch = GetEnvOrDefault(EnvBranch, ""); branch != "" {
+func getCurrentBranch() (branch string, err error) {
+	if branch = GetEnvOrDefault(envBranch, ""); branch != "" {
 		return
 	}
 
-	cmd := exec.Command(GitCommand, "branch", "--show-current")
+	cmd := exec.Command(gitCommand, "branch", "--show-current")
 
-	output, err := ExecOutputStub(cmd)
+	output, err := execOutputStub(cmd)
 	branch = strings.TrimSpace(string(output))
 
 	return
@@ -169,14 +169,14 @@ func isAllowed(path string, allowed, blocked []string) bool {
 func getDirtyPaths(branch string) ([]string, error) {
 	branch = strings.TrimSpace(branch)
 
-	args := []string{GitCommand, "diff", "--name-only"}
+	args := []string{gitCommand, "diff", "--name-only"}
 	if branch != "" {
 		args = append(args, branch)
 	}
 
 	cmd := exec.Command(args[0], args[1:]...)
 
-	output, err := ExecOutputStub(cmd)
+	output, err := execOutputStub(cmd)
 
 	return getLines(output, []byte{'\n'}), err
 }

@@ -18,8 +18,8 @@ import (
 type Language struct {
 	Name                      string              `yaml:"name,omitempty"`
 	FileExtension             string              `yaml:"fileExtension,omitempty"`
-	VersionPath               string              `yaml:"versionPath,omitempty"`
 	WorkspaceFile             string              `yaml:"workspaceFile,omitempty"`
+	VersionPath               string              `yaml:"versionPath,omitempty"`
 	TaskExec                  *TaskCommands       `yaml:"taskCommands,omitempty"`
 	DepCommands               *DependencyCommands `yaml:"dependencyCommands,omitempty"`
 	Workspaces                []*Workspace        `yaml:"workspaces,omitempty"`
@@ -52,7 +52,7 @@ type DependencyCommands struct {
 	ExternalDepCommand  string `yaml:"externalDepCommand,omitempty"`
 }
 
-func PopulateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
+func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	now := time.Now()
 	fmt.Fprintf(cmd.OutOrStdout(), "Enumerating repo. Creating build, lint, and test tasks...\n")
 
@@ -87,8 +87,8 @@ func PreliminaryCommands(langs []*Language) (err error) {
 			}
 			cmd := exec.Command(commandParts[0], commandParts[1:]...)
 
-			if output, err := ExecOutputStub(cmd); err != nil {
-				err = fmt.Errorf("error executing '%s':\nerror: %v\noutput: %v", cmd, err, output)
+			if output, err := execOutputStub(cmd); err != nil {
+				err = fmt.Errorf("error executing '%s'\nerror: %v\noutput: %v", cmd, err, output)
 				return err
 			} else {
 				fmt.Printf("success\n")
@@ -108,7 +108,7 @@ func splitCommand(cmd string) []string {
 func ExecuteUserMethods(cmd, path, name string) (response []string, err error) {
 	commandParts := splitCommand(cmd)
 	if len(commandParts) == 0 {
-		err = fmt.Errorf("dependency commands not supplied for the language %s.\n", name)
+		err = fmt.Errorf("dependency commands not supplied for the language %s", name)
 		return
 	}
 	execCmd := exec.Command(commandParts[0], commandParts[1:]...)
@@ -117,21 +117,21 @@ func ExecuteUserMethods(cmd, path, name string) (response []string, err error) {
 	}
 	stdout, _ := execCmd.StdoutPipe()
 
-	if err = ExecStartStub(execCmd); err != nil {
-		err = fmt.Errorf("error starting execution of '%s': %v\n", cmd, err)
+	if err = execStartStub(execCmd); err != nil {
+		err = fmt.Errorf("error starting execution of '%s': %v", cmd, err)
 		return
 	}
 
 	buffer := make([]byte, 1024)
-	n, err := ReadStub(stdout, buffer)
+	n, err := readStub(stdout, buffer)
 	if err != nil {
-		err = fmt.Errorf("error executing '%s': %v\n", cmd, err)
+		err = fmt.Errorf("error executing '%s': %v", cmd, err)
 		return
 	}
 	responseData := buffer[:n]
 
-	if err = ExecWaitStub(execCmd); err != nil {
-		err = fmt.Errorf("error executing '%s': %v\n", cmd, err)
+	if err = execWaitStub(execCmd); err != nil {
+		err = fmt.Errorf("error executing '%s': %v", cmd, err)
 		return
 	}
 

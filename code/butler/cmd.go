@@ -15,13 +15,13 @@ import (
 
 const (
 	envBuildID         = "BUILD_ID"
-	EnvRunAll          = "BUTLER_SHOULD_RUN_ALL"
+	envRunAll          = "BUTLER_SHOULD_RUN_ALL"
 	envPublish         = "BUTLER_SHOULD_PUBLISH"
 	envBitbucketCommit = "GIT_COMMIT"
-	EnvBranch          = "GIT_BRANCH"
+	envBranch          = "GIT_BRANCH"
 )
 
-func GetCommand() *cobra.Command {
+func getCommand() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "butler <flags>",
 		Short: "butler is a build test lint runner",
@@ -36,16 +36,16 @@ func GetCommand() *cobra.Command {
 }
 
 var (
-	Cmd   = GetCommand()
+	cmd   = getCommand()
 	flags = &ButlerConfig{
 		Paths: &ButlerPaths{},
 		Git:   &GitConfigurations{},
 		Task:  &TaskConfigurations{},
 	}
-	ExecOutputStub = (*exec.Cmd).Output
-	ExecStartStub  = (*exec.Cmd).Start
-	ExecWaitStub   = (*exec.Cmd).Wait
-	ReadStub       = (io.Reader).Read
+	execOutputStub = (*exec.Cmd).Output
+	execStartStub  = (*exec.Cmd).Start
+	execWaitStub   = (*exec.Cmd).Wait
+	readStub       = (io.Reader).Read
 
 	ConfigPath string
 )
@@ -53,7 +53,7 @@ var (
 // Execute is the entrypoint into the Butler
 func Execute() {
 	// all errors are handled internal to this call.
-	_ = Cmd.Execute()
+	_ = cmd.Execute()
 }
 
 func parseFlags(cmd *cobra.Command) {
@@ -90,15 +90,11 @@ func run(cmd *cobra.Command, args []string) (err error) {
 	}
 	config.applyFlagsToConfig(cmd, flags)
 
-	if err = config.LoadButlerIgnore(); err != nil {
-		return
-	}
-
 	defer publishResults(config)
 
 	fmt.Fprintln(cmd.OutOrStdout(), config)
 
-	_, err = GetTasks(config, cmd)
+	_, err = getTasks(config, cmd)
 	if err != nil {
 		return
 	}

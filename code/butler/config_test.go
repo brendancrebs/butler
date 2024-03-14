@@ -36,10 +36,10 @@ func Test_loadConfig(t *testing.T) {
 		config := &butler.ButlerConfig{}
 		expected := &butler.ButlerConfig{
 			Paths: &butler.ButlerPaths{
-				AllowedPaths:    []string{"test_repo"},
-				BlockedPaths:    []string{"ci/", "specs", ".devcontainer", "bad_configs"},
+				AllowedPaths:    []string{"code", "test_repo"},
+				BlockedPaths:    []string{"node_modules", "coverage", "specs", ".devcontainer", "ci", "bad_configs"},
 				WorkspaceRoot:   "../..",
-				ResultsFilePath: butler.ButlerResultsPath,
+				ResultsFilePath: "./butler_results.json",
 			},
 			Git: &butler.GitConfigurations{
 				PublishBranch: "main",
