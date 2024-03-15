@@ -4,15 +4,12 @@
 publish-branch: "main"
 
 paths:
-  workspace-root: "../.."
+  workspace-root: "./test_data"
   allowed-paths:
     - test_repo
 
   blocked-paths:
-    - ci/
-    - specs
-    - .devcontainer
-    - bad_configs
+    - blocked_dir
 
 tasks:
   should-run-all: false

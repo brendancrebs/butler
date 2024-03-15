@@ -161,7 +161,7 @@ func (bc *ButlerConfig) String() string {
 }
 
 func (bc *ButlerConfig) LoadButlerIgnore() (err error) {
-	ignorePath := path.Join(bc.Paths.WorkspaceRoot, ignoreFileName)
+	ignorePath := path.Join(filepath.Dir(ConfigPath), ignoreFileName)
 	if _, err := os.Stat(ignorePath); err != nil {
 		return nil
 	}

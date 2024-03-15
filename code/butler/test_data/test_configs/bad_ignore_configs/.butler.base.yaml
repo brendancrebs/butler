@@ -6,6 +6,8 @@ publish-branch: "main"
 paths:
   allowed-paths:
     - test_repo
+  blocked-paths:
+    - blocked_dir
   workspace-root: "./test_data/test_configs/bad_ignore_configs"
 
 languages:

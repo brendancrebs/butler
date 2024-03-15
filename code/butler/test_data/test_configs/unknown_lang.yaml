@@ -1,8 +1,6 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
 
-publish-branch: "main"
-
 paths:
   workspace-root: "./test_data"
   allowed-paths:
@@ -19,18 +17,18 @@ tasks:
   should-publish: false
 
 languages:
-  - name: "golang"
-    filePatterns: 
-      - ".go"
+  - name: "invalid"
+    filePatterns:
+      - "invalid.bad"
     builtinStdLibsMethod: true
     builtinInternalDepMethod: true
     builtinExternalDepMethod: true
     dependencyCommands:
-      externalDepCommand: "go run ./user_commands/go_external_deps_method.go"
+      externalDepCommand: "echo collect deps"
     taskCommands: 
-      lintCommand: "echo go lint command"
-      testCommand: "echo go test command"
-      buildCommand: "echo go build command"
-      publishCommand: "echo go publish command"
+      lintCommand: "echo lint command"
+      testCommand: "echo test command"
+      buildCommand: "echo build command"
+      publishCommand: "echo publish command"
       setUpCommands:
-          - "echo go test"
+          - "echo test"

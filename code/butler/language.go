@@ -49,19 +49,12 @@ func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	now := time.Now()
 	fmt.Fprintf(cmd.OutOrStdout(), "Enumerating repo. Creating build, lint, and test tasks...\n")
 
-	// The calls for createTasks are in separate loops so lint tasks for all languages will be first
-	// in queue and so on for the other task types.
-	for _, lang := range bc.Languages {
-		lang.createTasks(taskQueue, BuildStepLint, lang.TaskExec.LintCommand)
-	}
-	for _, lang := range bc.Languages {
-		lang.createTasks(taskQueue, BuildStepTest, lang.TaskExec.TestCommand)
-	}
-	for _, lang := range bc.Languages {
-		lang.createTasks(taskQueue, BuildStepBuild, lang.TaskExec.BuildCommand)
-	}
-	for _, lang := range bc.Languages {
-		lang.createTasks(taskQueue, BuildStepPublish, lang.TaskExec.PublishCommand)
+	for _, step := range toBuildStep {
+		if step >= BuildStepLint && step <= BuildStepPublish {
+			for _, lang := range bc.Languages {
+				lang.createTasks(taskQueue, step, lang.TaskExec.LintCommand)
+			}
+		}
 	}
 
 	fmt.Fprintf(cmd.OutOrStdout(), "Done. %s\n\n", time.Since(now).String())

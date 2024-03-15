@@ -2,14 +2,12 @@
 # SEL Confidential
 
 paths:
-  workspace-root: "../.."
+  workspace-root: "./test_data"
   allowed-paths:
     - test_repo
 
   blocked-paths:
-    - ci/
-    - specs
-    - .devcontainer
+    - blocked_dir
 
 tasks:
   should-run-all: false
@@ -22,11 +20,10 @@ languages:
   - name: "golang"
     filePatterns: 
       - "package.json"
-    builtinStdLibsMethod: false
-    dependencyCommands:
-      stdLibsCommand: "fail command"
-      internalDepCommand: "fail command"
-      externalDepCommand: "fail command"
+    builtinStdLibsMethod: true
+    builtinInternalDepMethod: true
+    builtinExternalDepMethod: true
+
     taskCommands: 
       lintCommand: "echo go lint command"
       testCommand: "echo go test command"

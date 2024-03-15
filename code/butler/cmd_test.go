@@ -130,7 +130,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.no_git.yaml", "--all"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/no_git.yaml", "--all"})
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
@@ -245,7 +245,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.bad_command.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/bad_command.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{"fail", "command"}) {
 				return nil, errors.New("test command failed")
@@ -263,7 +263,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.invalid_lang.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/unknown_lang.yaml"})
 
 		Execute()
 		So(stderr.String(), ShouldContainSubstring, "Error: language id 'invalid' not found")
@@ -276,7 +276,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/.butler.base.user_command.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/user_command.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
@@ -295,5 +295,31 @@ func Test_RunWithErr(t *testing.T) {
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldEqual, "Error: error starting execution of 'fail command': test command start failed\n")
+	})
+
+	Convey("Butler failed when unnamed language supplied", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/invalid_language_1.yaml"})
+
+		Execute()
+		So(stderr.String(), ShouldContainSubstring, "Error: a language supplied in the config without a name. Please supply a language identifier for each language in the config")
+	})
+
+	Convey("Butler failed when no file pattern supplied", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/invalid_language_2.yaml"})
+
+		Execute()
+		So(stderr.String(), ShouldContainSubstring, "Error: no file patterns supplied for 'invalid'. Please see the 'FilePatterns' options in the config spec for more information")
 	})
 }

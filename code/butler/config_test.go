@@ -37,9 +37,9 @@ func Test_loadConfig(t *testing.T) {
 		expected := &butler.ButlerConfig{
 			PublishBranch: "main",
 			Paths: &butler.ButlerPaths{
-				AllowedPaths:    []string{"code", "test_repo"},
-				BlockedPaths:    []string{"node_modules", "coverage", "specs", ".devcontainer", "ci", "bad_configs"},
-				WorkspaceRoot:   "../..",
+				AllowedPaths:    []string{"good_path", "test_repo"},
+				BlockedPaths:    []string{"bad_path", "blocked_dir"},
+				WorkspaceRoot:   "./test_data",
 				ResultsFilePath: "./butler_results.json",
 			},
 			Task: &butler.TaskConfigurations{
@@ -171,7 +171,7 @@ func Test_loadButlerIgnore(t *testing.T) {
 		expected := &butler.ButlerConfig{
 			Paths: &butler.ButlerPaths{
 				AllowedPaths:  []string{"good_path"},
-				BlockedPaths:  []string{"bad_path"},
+				BlockedPaths:  []string{"bad_path", "blocked_dir"},
 				WorkspaceRoot: "./test_data/test_configs",
 			},
 		}
@@ -181,24 +181,28 @@ func Test_loadButlerIgnore(t *testing.T) {
 		So(testConfig, ShouldResemble, expected)
 	})
 	Convey("Nothing returned if no .butler.ignore file is found.", t, func() {
-		testConfig := &butler.ButlerConfig{
-			Paths: &butler.ButlerPaths{
-				WorkspaceRoot: "/",
-			},
-		}
-		err := testConfig.LoadButlerIgnore()
+		temp := butler.ConfigPath
+		butler.ConfigPath = "./test_data/test_configs/bad_ignore_configs/missing_ignore_dir/.butler.base.yaml"
+		config := &butler.ButlerConfig{}
+		_ = config.Load(butler.ConfigPath)
+		err := config.LoadButlerIgnore()
+		butler.ConfigPath = temp
 
 		So(err, ShouldBeNil)
-		So(testConfig.Paths.AllowedPaths, ShouldBeNil)
-		So(testConfig.Paths.BlockedPaths, ShouldBeNil)
+		So(config.Paths.AllowedPaths, ShouldBeNil)
+		So(config.Paths.BlockedPaths, ShouldBeNil)
 	})
 	Convey("Failure to parse .butler.ignore.", t, func() {
+		temp := butler.ConfigPath
+		butler.ConfigPath = "./test_data/test_configs/bad_ignore_configs/.butler.base.yaml"
 		testConfig := &butler.ButlerConfig{
 			Paths: &butler.ButlerPaths{
-				WorkspaceRoot: "./test_data/test_configs/bad_ignore_configs",
+				WorkspaceRoot: ".",
 			},
 		}
+
 		err := testConfig.LoadButlerIgnore()
+		butler.ConfigPath = temp
 
 		So(err, ShouldNotBeNil)
 		So(testConfig.Paths.AllowedPaths, ShouldEqual, []string{"good_path"})
