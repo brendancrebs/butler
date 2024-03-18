@@ -28,9 +28,6 @@ func Test_loadConfig(t *testing.T) {
 				PublishCommand: "echo go publish command",
 				SetUpCommands:  []string{"echo go test"},
 			},
-			DepCommands: &butler.DependencyCommands{
-				ExternalDepCommand: "go run ./user_commands/go_external_deps_method.go",
-			},
 		}
 
 		config := &butler.ButlerConfig{}

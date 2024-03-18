@@ -276,7 +276,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/user_command.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/user_command_fail.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
@@ -295,6 +295,28 @@ func Test_RunWithErr(t *testing.T) {
 		_, err := os.Stat(butlerResultsPath)
 		So(err, ShouldBeNil)
 		So(stderr.String(), ShouldEqual, "Error: error starting execution of 'fail command': test command start failed\n")
+	})
+
+	Convey("Butler successfully executes user commands", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/user_command.yaml"})
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
+				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
+				return gitDiffReturn, nil
+			}
+			return nil, nil
+		}
+		Execute()
+
+		_, err := os.Stat(butlerResultsPath)
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldEqual, "")
 	})
 
 	Convey("Butler failed when unnamed language supplied", t, func() {

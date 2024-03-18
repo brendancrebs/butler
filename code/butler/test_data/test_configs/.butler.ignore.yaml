@@ -6,3 +6,4 @@ allowed-paths:
 
 blocked-paths:
   - bad_path
+  - blocked_dir
