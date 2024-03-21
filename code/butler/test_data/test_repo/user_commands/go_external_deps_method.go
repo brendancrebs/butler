@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 )
 
 type GoMod struct {
@@ -25,9 +26,10 @@ type Dependency struct {
 	Indirect bool
 }
 
-var goModPath = "../../go.mod"
+var goModPath = "./go.mod"
 
 func main() {
+	goModPath, _ = filepath.Abs(goModPath)
 	dependencies, err := getDependencies(goModPath)
 	if err != nil {
 		fmt.Println("Error:", err)

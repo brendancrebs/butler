@@ -121,11 +121,10 @@ func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 // Checks that fields critical for Butler operation have been correctly supplied to the config file.
-func (bc *ButlerConfig) ValidateConfig() error {
-	if bc.Paths.WorkspaceRoot == "" {
-		return errors.New("no workspace root has been set.\nPlease set a workspace root in the config")
+func (bc *ButlerConfig) ValidateConfig() (err error) {
+	if err = bc.setWorkspace(); err != nil {
+		return
 	}
-	os.Setenv(envWorkspaceRoot, bc.Paths.WorkspaceRoot)
 	if bc.Task.Coverage != "" {
 		cover, err := strconv.Atoi(bc.Task.Coverage)
 		if err != nil {
@@ -144,11 +143,26 @@ func (bc *ButlerConfig) ValidateConfig() error {
 		return errors.New(`no languages have been provided in the config`)
 	}
 	for _, lang := range bc.Languages {
-		if err := lang.validateLanguage(); err != nil {
-			return err
+		if err = lang.validateLanguage(); err != nil {
+			return
 		}
 	}
-	return nil
+	return
+}
+
+func (bc *ButlerConfig) setWorkspace() (err error) {
+	if bc.Paths.WorkspaceRoot == "" {
+		return errors.New("no workspace root has been set.\nPlease set a workspace root in the config")
+	}
+
+	bc.Paths.WorkspaceRoot, _ = filepath.Abs(bc.Paths.WorkspaceRoot)
+
+	err = os.Chdir(bc.Paths.WorkspaceRoot)
+	if err != nil {
+		return
+	}
+	os.Setenv(envWorkspaceRoot, bc.Paths.WorkspaceRoot)
+	return
 }
 
 func (bc *ButlerConfig) String() string {

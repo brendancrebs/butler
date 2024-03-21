@@ -45,11 +45,14 @@ func replaceStubs() (undo func()) {
 		return n, err
 	}
 
+	originalWd, _ := os.Getwd()
+
 	return func() {
 		execOutputStub = originalExecOutputStub
 		execStartStub = originalExecStartStub
 		execWaitStub = originalExecWaitStub
 		readStub = originalReadStub
+		_ = os.Chdir(originalWd)
 		_ = os.Remove(butlerResultsPath)
 	}
 }
@@ -79,6 +82,9 @@ func Test_RunWithErr(t *testing.T) {
 	})
 
 	Convey("Running command with env vars enabled", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
 		os.Setenv(envRunAll, "true")
 		originalEnvBranch := GetEnvOrDefault(envBranch, "")
 		os.Setenv(envBranch, strings.TrimSpace(currBranch))
@@ -104,6 +110,9 @@ func Test_RunWithErr(t *testing.T) {
 	})
 
 	Convey("Running command with no GIT_BRANCH env var", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
 		originalEnvBranch := GetEnvOrDefault(envBranch, "")
 		os.Unsetenv(envBranch)
 		cmd = getCommand()
@@ -127,6 +136,9 @@ func Test_RunWithErr(t *testing.T) {
 	})
 
 	Convey("Running command with git turned off", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
@@ -139,6 +151,9 @@ func Test_RunWithErr(t *testing.T) {
 	})
 
 	Convey("config parse fails due to bad path", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
@@ -147,11 +162,14 @@ func Test_RunWithErr(t *testing.T) {
 
 		// butler_results.json should still exist despite error
 		_, err := os.Stat(butlerResultsPath)
-		So(err, ShouldBeNil)
+		So(err.Error(), ShouldContainSubstring, "stat ./butler_results.json: no such file or directory")
 		So(stderr.String(), ShouldContainSubstring, "Error: stat ./test_data/test_configs/.butler.invalid.bad: no such file or directory")
 	})
 
 	Convey("config parse fails from path being invalid.", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
@@ -159,11 +177,14 @@ func Test_RunWithErr(t *testing.T) {
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
-		So(err, ShouldBeNil)
+		So(err.Error(), ShouldContainSubstring, "stat ./butler_results.json: no such file or directory")
 		So(stderr.String(), ShouldContainSubstring, "Error: read ./test_data/test_configs/bad_ignore_configs: is a directory")
 	})
 
 	Convey(".ignore parse fails from inability to read file", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
@@ -171,11 +192,14 @@ func Test_RunWithErr(t *testing.T) {
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
-		So(err, ShouldBeNil)
+		So(err.Error(), ShouldContainSubstring, "stat ./butler_results.json: no such file or directory")
 		So(stderr.String(), ShouldContainSubstring, "Error: read test_data/test_configs/bad_ignore_configs/ignore_dir/.butler.ignore.yaml: is a directory")
 	})
 
 	Convey(".ignore parse fails due to bad syntax", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
@@ -183,7 +207,7 @@ func Test_RunWithErr(t *testing.T) {
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
-		So(err, ShouldBeNil)
+		So(err.Error(), ShouldContainSubstring, "stat ./butler_results.json: no such file or directory")
 		So(stderr.String(), ShouldContainSubstring, "cannot unmarshal !!map into []string")
 	})
 
