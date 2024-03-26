@@ -142,7 +142,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/no_git.yaml", "--all"})
+		cmd.SetArgs([]string{"--cfg", "./test_data/test_configs/no_git.yaml", "--all"})
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)
@@ -288,6 +288,9 @@ func Test_RunWithErr(t *testing.T) {
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/unknown_lang.yaml"})
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			return nil, nil
+		}
 
 		Execute()
 		So(stderr.String(), ShouldContainSubstring, "Error: language id 'invalid' not found")
@@ -367,5 +370,21 @@ func Test_RunWithErr(t *testing.T) {
 
 		Execute()
 		So(stderr.String(), ShouldContainSubstring, "Error: no file patterns supplied for 'invalid'. Please see the 'FilePatterns' options in the config spec for more information")
+	})
+
+	Convey("Butler collects workspace dependencies when enabled", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/workspace_deps.yaml"})
+
+		Execute()
+
+		_, err := os.Stat(butlerResultsPath)
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldContainSubstring, "")
 	})
 }

@@ -43,12 +43,14 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 		if err = lang.preliminaryCommands(); err != nil {
 			return
 		}
-		if err = lang.getExternalDeps(bc); err != nil {
-			return
+		if bc.PublishBranch != "" {
+			if err = lang.getExternalDeps(bc); err != nil {
+				return
+			}
+			dirtyFolders = append(dirtyFolders, lang.ExternalDeps...)
 		}
-		dirtyFolders = append(dirtyFolders, lang.ExternalDeps...)
 
-		lang.Workspaces = getWorkspaces(lang, allPaths)
+		lang.getWorkspaces(allPaths, bc.PublishBranch)
 	}
 
 	for _, lang := range bc.Languages {
@@ -70,7 +72,7 @@ func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, er
 		}
 		dirtyFolders = getUniqueFolders(allDirtyPaths)
 
-		if err = shouldRunAll(bc, allDirtyPaths, dirtyFolders); err != nil {
+		if err = shouldRunAll(bc, allDirtyPaths); err != nil {
 			return nil, nil, err
 		}
 	} else {
@@ -80,7 +82,7 @@ func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, er
 }
 
 // Determines if Butler requires a full build.
-func shouldRunAll(bc *ButlerConfig, allDirtyPaths, dirtyFolders []string) (err error) {
+func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 	// get current git branch name
 	currentBranch, err := getCurrentBranch()
 	if err != nil {

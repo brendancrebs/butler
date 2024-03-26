@@ -36,19 +36,18 @@ func goGetStdLibs() ([]string, error) {
 
 // goGetPkgDeps returns the list of go package dependencies for a given package.
 // It returns nothing if the folder is not or does not contains any go files.
-func goGetPkgDeps(directory string) []string {
+func goGetPkgDeps(directory string) (results []string) {
 	goPath, _ := exec.LookPath(goExec)
 	cmd := exec.Command(goPath, "list", "-test", "-f", `{{join .Deps "\n"}}`, directory)
 
 	output, _ := cmd.Output()
 	s := bufio.NewScanner(bytes.NewBuffer(output))
 
-	var results []string
 	for s.Scan() {
 		results = append(results, s.Text())
 	}
 
-	return results
+	return
 }
 
 // goGetModFileDiff returns the list of changed dependencies listed in the mod file.

@@ -18,7 +18,7 @@ type Workspace struct {
 }
 
 // Collects workspaces for a language
-func getWorkspaces(lang *Language, paths []string) (workspaces []*Workspace) {
+func (lang *Language) getWorkspaces(paths []string, publishBranch string) {
 	allDirs := make(map[string]bool)
 	for _, pattern := range lang.FilePatterns {
 		for k, v := range getMatchingDirs(paths, pattern) {
@@ -26,8 +26,7 @@ func getWorkspaces(lang *Language, paths []string) (workspaces []*Workspace) {
 		}
 	}
 
-	workspaces = concurrentGetWorkspaces(lang.Name, lang.StdLibDeps, allDirs)
-	return
+	lang.concurrentGetWorkspaces(allDirs, publishBranch)
 }
 
 // getMatchingDirs returns the map of directories that contain `pattern`.
@@ -44,7 +43,7 @@ func getMatchingDirs(dirs []string, pattern string) (matches map[string]bool) {
 
 // Returns the full set of workspaces.  Brute force multithreading, spins out the requests and lets
 // the go runtime handle the workload.
-func concurrentGetWorkspaces(languageId string, stdLibs []string, allDirs map[string]bool) (ws []*Workspace) {
+func (lang *Language) concurrentGetWorkspaces(allDirs map[string]bool, publishBranch string) {
 	var (
 		mu sync.Mutex
 		wg sync.WaitGroup
@@ -54,19 +53,20 @@ func concurrentGetWorkspaces(languageId string, stdLibs []string, allDirs map[st
 		wg.Add(1)
 		// must proxy dir into a different variable to make it safe to use inside the closure.
 		go func(thisDir string) {
-			var (
-				deps       = builtin.GetWorkspaceDeps(languageId, thisDir)
-				prunedDeps = difference(deps, stdLibs)
-				workspace  = &Workspace{Location: thisDir, Dependencies: prunedDeps}
-			)
+			workspace := &Workspace{Location: thisDir}
+			if lang.BuiltinWorkspaceDepMethod && publishBranch != "" {
+				deps := builtin.GetWorkspaceDeps(lang.Name, thisDir)
+				prunedDeps := difference(deps, lang.StdLibDeps)
+				workspace.Dependencies = prunedDeps
+			}
+
 			mu.Lock()
-			ws = append(ws, workspace)
+			lang.Workspaces = append(lang.Workspaces, workspace)
 			wg.Done()
 			mu.Unlock()
 		}(dir)
 	}
 	wg.Wait()
-	return
 }
 
 // difference returns the elements in `a` that aren't in `b`.

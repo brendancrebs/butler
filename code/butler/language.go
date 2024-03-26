@@ -124,7 +124,9 @@ func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
 	if lang.BuiltinStdLibsMethod {
 		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
 	} else {
-		lang.StdLibDeps, err = ExecuteUserMethods(lang.DepCommands.StdLibsCommand, lang.Name)
+		if lang.DepCommands.StdLibsCommand != "" {
+			lang.StdLibDeps, err = ExecuteUserMethods(lang.DepCommands.StdLibsCommand, lang.Name)
+		}
 	}
 	if err != nil {
 		return
@@ -165,6 +167,13 @@ func (lang *Language) validateLanguage() error {
 	}
 	if len(lang.FilePatterns) < 1 {
 		return fmt.Errorf("no file patterns supplied for '%s'. Please see the 'FilePatterns' options in the config spec for more information", lang.Name)
+	}
+	if lang.DepCommands == nil {
+		lang.DepCommands = &DependencyCommands{
+			StdLibsCommand:      "",
+			WorkspaceDepCommand: "",
+			ExternalDepCommand:  "",
+		}
 	}
 	return nil
 }

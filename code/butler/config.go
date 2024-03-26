@@ -80,8 +80,7 @@ func (bc *ButlerConfig) Load(configPath string) (err error) {
 		return
 	}
 
-	err = yaml.Unmarshal(content, bc)
-	if err != nil {
+	if err = yaml.Unmarshal(content, bc); err != nil {
 		return
 	}
 
@@ -98,7 +97,6 @@ func (bc *ButlerConfig) Load(configPath string) (err error) {
 func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	type defaultConfig ButlerConfig
 	defaults := defaultConfig{
-		PublishBranch: envBranchName,
 		Paths: &ButlerPaths{
 			ResultsFilePath: butlerResultsPath,
 		},

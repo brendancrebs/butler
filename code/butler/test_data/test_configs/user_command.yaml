@@ -21,7 +21,7 @@ languages:
     filePatterns: 
       - ".go"
     builtinStdLibsMethod: true
-    builtinInternalDepMethod: true
+    builtinWorkspaceDepMethod: false
     builtinExternalDepMethod: false
     dependencyCommands:
       externalDepCommand: "go run ./test_repo/user_commands/go_external_deps_method.go"

@@ -23,7 +23,7 @@ languages:
     filePatterns: 
       - ".go"
     builtinStdLibsMethod: true
-    builtinInternalDepMethod: true
+    builtinWorkspaceDepMethod: false
     builtinExternalDepMethod: true
     dependencyCommands:
       externalDepCommand: "go run ./user_commands/go_external_deps_method.go"

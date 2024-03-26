@@ -21,7 +21,7 @@ languages:
     filePatterns: 
       - ".go"
     builtinStdLibsMethod: false
-    builtinInternalDepMethod: false
+    builtinWorkspaceDepMethod: false
     builtinExternalDepMethod: false
     dependencyCommands:
       stdLibsCommand: "fail command"

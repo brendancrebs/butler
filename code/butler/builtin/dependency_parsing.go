@@ -43,5 +43,6 @@ func GetWorkspaceDeps(languageId, directory string) (deps []string) {
 	case golangId:
 		deps = goGetPkgDeps(directory)
 	}
+
 	return
 }

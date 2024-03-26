@@ -1,6 +1,8 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
 
+publish-branch: "main"
+
 paths:
   workspace-root: "./test_data"
   allowed-paths:
@@ -20,11 +22,11 @@ languages:
   - name: "invalid"
     filePatterns:
       - "invalid.bad"
-    builtinStdLibsMethod: true
-    builtinInternalDepMethod: true
+    builtinStdLibsMethod: false
+    builtinWorkspaceDepMethod: false
     builtinExternalDepMethod: true
     dependencyCommands:
-      externalDepCommand: "echo collect deps"
+      internalDepCommand: "echo collect workspace deps"
     taskCommands: 
       lintCommand: "echo lint command"
       testCommand: "echo test command"
