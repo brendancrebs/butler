@@ -32,17 +32,17 @@ type Language struct {
 }
 
 type TaskCommands struct {
-	SetUpCommands  []string `yaml:"setUpCommands,omitempty"`
-	LintCommand    string   `yaml:"lintCommand,omitempty"`
-	TestCommand    string   `yaml:"testCommand,omitempty"`
-	BuildCommand   string   `yaml:"buildCommand,omitempty"`
-	PublishCommand string   `yaml:"publishCommand,omitempty"`
+	SetUp   []string `yaml:"setUp,omitempty"`
+	Lint    string   `yaml:"lint,omitempty"`
+	Test    string   `yaml:"test,omitempty"`
+	Build   string   `yaml:"build,omitempty"`
+	Publish string   `yaml:"publish,omitempty"`
 }
 
 type DependencyCommands struct {
-	StdLibsCommand      string `yaml:"stdLibsCommand,omitempty"`
-	WorkspaceDepCommand string `yaml:"internalDepCommand,omitempty"`
-	ExternalDepCommand  string `yaml:"externalDepCommand,omitempty"`
+	StandardLibrary string `yaml:"standardLibrary,omitempty"`
+	Workspace       string `yaml:"workspace,omitempty"`
+	External        string `yaml:"external,omitempty"`
 }
 
 func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
@@ -52,7 +52,7 @@ func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	for _, step := range toBuildStep {
 		if step >= BuildStepLint && step <= BuildStepPublish {
 			for _, lang := range bc.Languages {
-				lang.createTasks(taskQueue, step, lang.TaskExec.LintCommand)
+				lang.createTasks(taskQueue, step, lang.TaskExec.Lint)
 			}
 		}
 	}
@@ -62,7 +62,7 @@ func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 
 // Executes commands that must be run before the creation of tasks
 func (lang *Language) preliminaryCommands() (err error) {
-	for _, cmd := range lang.TaskExec.SetUpCommands {
+	for _, cmd := range lang.TaskExec.SetUp {
 		fmt.Printf("\nexecuting: %s...  ", cmd)
 
 		commandParts := splitCommand(cmd)
@@ -123,11 +123,10 @@ func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
 	if lang.BuiltinStdLibsMethod {
 		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
-	} else {
-		if lang.DepCommands.StdLibsCommand != "" {
-			lang.StdLibDeps, err = ExecuteUserMethods(lang.DepCommands.StdLibsCommand, lang.Name)
-		}
+	} else if lang.DepCommands.StandardLibrary != "" {
+		lang.StdLibDeps, err = ExecuteUserMethods(lang.DepCommands.StandardLibrary, lang.Name)
 	}
+
 	if err != nil {
 		return
 	}
@@ -135,7 +134,7 @@ func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
 	if lang.BuiltinExternalDepMethod {
 		lang.ExternalDeps, err = builtin.GetExternalDependencies(lang.Name)
 	} else {
-		lang.ExternalDeps, err = ExecuteUserMethods(lang.DepCommands.ExternalDepCommand, lang.Name)
+		lang.ExternalDeps, err = ExecuteUserMethods(lang.DepCommands.External, lang.Name)
 	}
 
 	return
@@ -170,9 +169,9 @@ func (lang *Language) validateLanguage() error {
 	}
 	if lang.DepCommands == nil {
 		lang.DepCommands = &DependencyCommands{
-			StdLibsCommand:      "",
-			WorkspaceDepCommand: "",
-			ExternalDepCommand:  "",
+			StandardLibrary: "",
+			Workspace:       "",
+			External:        "",
 		}
 	}
 	return nil

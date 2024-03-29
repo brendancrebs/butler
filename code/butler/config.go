@@ -31,25 +31,25 @@ var (
 
 // ButlerPaths specifies the allowed and blocked paths within the .butler.ignore.yaml.
 type ButlerPaths struct {
-	AllowedPaths    []string `yaml:"allowed-paths,omitempty"`
-	BlockedPaths    []string `yaml:"blocked-paths,omitempty"`
-	CriticalPaths   []string `yaml:"critical-paths,omitempty"`
-	WorkspaceRoot   string   `yaml:"workspace-root,omitempty"`
-	ResultsFilePath string   `yaml:"results-file-path,omitempty"`
+	AllowedPaths    []string `yaml:"allowedPaths,omitempty"`
+	BlockedPaths    []string `yaml:"blockedPaths,omitempty"`
+	CriticalPaths   []string `yaml:"criticalPaths,omitempty"`
+	WorkspaceRoot   string   `yaml:"workspaceRoot,omitempty"`
+	ResultsFilePath string   `yaml:"resultsFilePath,omitempty"`
 }
 
 type TaskConfigurations struct {
 	Coverage      string `yaml:"coverage,omitempty"`
-	ShouldRunAll  bool   `yaml:"should-run-all,omitempty"`
-	ShouldLint    bool   `yaml:"should-lint,omitempty"`
-	ShouldTest    bool   `yaml:"should-test,omitempty"`
-	ShouldBuild   bool   `yaml:"should-build,omitempty"`
-	ShouldPublish bool   `yaml:"should-publish,omitempty"`
+	ShouldRunAll  bool   `yaml:"runAll,omitempty"`
+	ShouldLint    bool   `yaml:"lint,omitempty"`
+	ShouldTest    bool   `yaml:"test,omitempty"`
+	ShouldBuild   bool   `yaml:"build,omitempty"`
+	ShouldPublish bool   `yaml:"publish,omitempty"`
 }
 
 // ButlerConfig specifies the Butler configuration options.
 type ButlerConfig struct {
-	PublishBranch string              `yaml:"publish-branch,omitempty"`
+	PublishBranch string              `yaml:"publishBranch,omitempty"`
 	Paths         *ButlerPaths        `yaml:"paths,omitempty"`
 	Task          *TaskConfigurations `yaml:"tasks,omitempty"`
 	Languages     []*Language         `yaml:"languages,omitempty"`
@@ -134,7 +134,7 @@ func (bc *ButlerConfig) ValidateConfig() (err error) {
 	}
 
 	if bc.Paths.AllowedPaths == nil {
-		return errors.New(`butler has not been given permission to search for workspaces in any directories.\n Please enter a list of directories in the 'allowed-paths' config field`)
+		return errors.New(`butler has not been given permission to search for workspaces in any directories.\n Please enter a list of directories in the 'allowedPaths' config field`)
 	}
 
 	if bc.Languages == nil {
@@ -155,8 +155,7 @@ func (bc *ButlerConfig) setWorkspace() (err error) {
 
 	bc.Paths.WorkspaceRoot, _ = filepath.Abs(bc.Paths.WorkspaceRoot)
 
-	err = os.Chdir(bc.Paths.WorkspaceRoot)
-	if err != nil {
+	if err = os.Chdir(bc.Paths.WorkspaceRoot); err != nil {
 		return
 	}
 	os.Setenv(envWorkspaceRoot, bc.Paths.WorkspaceRoot)

@@ -28,14 +28,14 @@ func Test_loadConfig(t *testing.T) {
 			BuiltinWorkspaceDepMethod: true,
 			BuiltinExternalDepMethod:  false,
 			DepCommands: &butler.DependencyCommands{
-				ExternalDepCommand: "go run ./test_repo/user_commands/go_external_deps_method.go",
+				External: "go run ./test_repo/user_commands/go_external_deps_method.go",
 			},
 			TaskExec: &butler.TaskCommands{
-				LintCommand:    "echo go lint command",
-				TestCommand:    "echo go test command",
-				BuildCommand:   "echo go build command",
-				PublishCommand: "echo go publish command",
-				SetUpCommands:  []string{"echo go test"},
+				Lint:    "echo go lint command",
+				Test:    "echo go test command",
+				Build:   "echo go build command",
+				Publish: "echo go publish command",
+				SetUp:   []string{"echo go test"},
 			},
 		}
 
@@ -85,10 +85,10 @@ func Test_validateConfig(t *testing.T) {
 	testLanguage := &butler.Language{
 		Name: "test",
 		TaskExec: &butler.TaskCommands{
-			SetUpCommands: []string{"echo test"},
+			SetUp: []string{"echo test"},
 		},
 		DepCommands: &butler.DependencyCommands{
-			ExternalDepCommand: "echo get deps",
+			External: "echo get deps",
 		},
 	}
 

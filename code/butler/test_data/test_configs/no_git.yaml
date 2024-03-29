@@ -2,28 +2,28 @@
 # SEL Confidential
 
 paths:
-  workspace-root: "./test_data"
-  allowed-paths:
+  workspaceRoot: "./test_data"
+  allowedPaths:
     - test_repo
 
-  blocked-paths:
+  blockedPaths:
     - blocked_dir
 
 tasks:
-  should-run-all: false
-  should-lint: true
-  should-test: true
-  should-build: false
-  should-publish: false
+  runAll: false
+  lint: true
+  test: true
+  build: false
+  publish: false
 
 languages:
   - name: "golang"
     filePatterns: 
       - ".go"
     taskCommands: 
-      lintCommand: "echo go lint command"
-      testCommand: "echo go test command"
-      buildCommand: "echo go build command"
-      publishCommand: "echo go publish command"
-      setUpCommands:
+      lint: "echo go lint command"
+      test: "echo go test command"
+      build: "echo go build command"
+      publish: "echo go publish command"
+      setUp:
           - "echo go test"

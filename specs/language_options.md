@@ -42,28 +42,28 @@ Below are the options for each individual language that gets defined under the `
 name: "golang"
 ```
 
-#### FilePatterns
+#### filePatterns
 
 - Type: string array
 
 - Required: Yes
 
-- Description: `FilePatterns` is a required field for the user to supply file pattern strings associated with code files
+- Description: `filePatterns` is a required field for the user to supply file pattern strings associated with code files
   for this language. Butler will use this to build workspaces. The file pattern could be a file extension, a common file
   name, or a specific file path. Keep in mind that Butler will execute the commands you supply in the directories it
   find these files.
 
 - Examples:
 
-Example patterns for C:
+Example for C:
 
 ```yaml
-FilePatterns:
+filePatterns:
   - ".c"
   - ".h"
 ```
 
-Example pattern for Javascript:
+Example for Javascript:
 
 ```yaml
 FilePatterns:
@@ -107,87 +107,87 @@ languages:
   - name: "golang"
     ...options...
     taskCommands:
-      lintCommand: "example lint command"
-      testCommand: "example test command"
+      lint: "example lint command"
+      test: "example test command"
   - name: "python"
     ...options...
 ```
 
-#### setUpCommands
+#### setUp
 
 - Type: string array
 
-- Description: `setUpCommands` is a list of commands that would need to be executed before the execution of tasks or
+- Description: `setUp` is a list of commands that would need to be executed before the execution of tasks or
   gathering of dependencies for a language.
 
 - Example
 
 ```yaml
 taskCommands:
-  setUpCommands:
+  setUp:
     - "example preliminary command"
 ```
 
-#### lintCommand
+#### lint
 
 - Type: string
 
-- Description: `lintCommand` is the field where you supply the command you wish to have executed during the linting
+- Description: `lint` is the field where you supply the command you wish to have executed during the linting
   stage for the given language.
 
 - Example:
 
 ```yaml
 taskCommands:
-  lintCommand: "go lint"
+  lint: "go lint"
 ```
 
-#### testCommand
+#### test
 
 - Type: string
 
-- Description: `testCommand` is the field where you supply the command you wish to have executed during the testing
+- Description: `test` is the field where you supply the command you wish to have executed during the testing
   stage for the given language.
 
 - Example:
 
 ```yaml
 taskCommands:
-  lintCommand: "go lint"
-  testCommand: "go test"
+  lint: "go lint"
+  test: "go test"
 ```
 
-#### buildCommand
+#### build
 
 - Type: string
 
-- Description: `buildCommand` is the field where you supply the command you wish to have executed during the building
+- Description: `build` is the field where you supply the command you wish to have executed during the building
   stage for the given language.
 
 - Example:
 
 ```yaml
 taskCommands:
-  lintCommand: "go lint"
-  testCommand: "go test"
-  buildCommand: "go build"
+  lint: "go lint"
+  test: "go test"
+  build: "go build"
 ```
 
-#### publishCommand
+#### publish
 
 - Type: string
 
-- Description: `publishCommand` is the field where you supply the command you wish to have executed during the publishing
+- Description: `publish` is the field where you supply the command you wish to have executed during the publishing
   stage for the given language.
 
 - Example:
 
 ```yaml
 taskCommands:
-  lintCommand: "go lint"
-  testCommand: "go test"
-  buildCommand: "go build"
-  publishCommand: "go publish"
+  lint: "go lint"
+  test: "go test"
+  build: "go build"
+  publish: "go publish"
 ```
 
 ### Dependency Command options
@@ -202,49 +202,49 @@ languages:
     taskCommands:
       ...options...
     dependencyCommands:
-      externalDepCommand: "example command"
+      external: "example command"
   - name: "python"
     ...options...
 ```
 
-#### StdLibsCommand
+#### standardLibrary
 
 - Type: string
 
-- Description: `StdLibsCommand` is a command to return an array of standard library dependencies for a language.
+- Description: `standardLibrary` is a command to return an array of standard library dependencies for a language.
 
 - Example:
 
 ```yaml
 dependencyCommands:
-  StdLibsCommand: "example command"
+  standardLibrary: "example command"
 ```
 
-#### internalDepCommand
+#### workspace
 
 - Type: string
 
-- Description: `internalDepCommand` is a command to return an array of dependencies for a particular workspace. Expect
+- Description: `workspace` is a command to return an array of dependencies for a particular workspace. Expect
   that this command will be executed at the location of every workspace that was collected for the given language.
 
 - Example:
 
 ```yaml
 dependencyCommands:
-  internalDepCommand: "example command"
+  workspace: "example command"
 ```
 
-#### externalDepCommand
+#### external
 
 - Type: string
 
-- Description: `externalDepCommand` is a command to return an array of external third party dependencies for a language.
+- Description: `external` is a command to return an array of external third party dependencies for a language.
 
 - Example:
 
 ```yaml
 dependencyCommands:
-  externalDepCommand: "example command"
+  external: "example command"
 ```
 
 ### Butler Ignore

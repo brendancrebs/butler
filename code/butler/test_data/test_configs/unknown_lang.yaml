@@ -1,22 +1,22 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
 
-publish-branch: "main"
+publishBranch: "main"
 
 paths:
-  workspace-root: "./test_data"
-  allowed-paths:
+  workspaceRoot: "./test_data"
+  allowedPaths:
     - test_repo
 
-  blocked-paths:
+  blockedPaths:
     - blocked_dir
 
 tasks:
-  should-run-all: false
-  should-lint: true
-  should-test: true
-  should-build: false
-  should-publish: false
+  runAll: false
+  lint: true
+  test: true
+  build: false
+  publish: false
 
 languages:
   - name: "invalid"
@@ -26,11 +26,11 @@ languages:
     builtinWorkspaceDepMethod: false
     builtinExternalDepMethod: true
     dependencyCommands:
-      internalDepCommand: "echo collect workspace deps"
+      workspace: "echo collect workspace deps"
     taskCommands: 
-      lintCommand: "echo lint command"
-      testCommand: "echo test command"
-      buildCommand: "echo build command"
-      publishCommand: "echo publish command"
-      setUpCommands:
+      lint: "echo lint command"
+      test: "echo test command"
+      build: "echo build command"
+      publish: "echo publish command"
+      setUp:
           - "echo test"

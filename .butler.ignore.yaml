@@ -1,11 +1,11 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
 
-allowed-paths:
+allowedPaths:
   - code
   - test_repo
 
-blocked-paths:
+blockedPaths:
   - node_modules
   - coverage
   - specs

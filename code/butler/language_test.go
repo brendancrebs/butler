@@ -19,13 +19,13 @@ func Test_createTasks(t *testing.T) {
 		inputLanguage := &Language{
 			Name: "golang",
 			TaskExec: &TaskCommands{
-				LintCommand:    "echo go lint command",
-				TestCommand:    "echo go test command",
-				BuildCommand:   "echo go build command",
-				PublishCommand: "echo go publish command",
+				Lint:    "echo go lint command",
+				Test:    "echo go test command",
+				Build:   "echo go build command",
+				Publish: "echo go publish command",
 			},
 			DepCommands: &DependencyCommands{
-				ExternalDepCommand: "echo go external dep command",
+				External: "echo go external dep command",
 			},
 			Workspaces: []*Workspace{
 				{Location: "./test_data/test_repo/go_test", IsDirty: true, Dependencies: []string{}},
@@ -35,7 +35,7 @@ func Test_createTasks(t *testing.T) {
 		}
 		testQueue := &Queue{}
 
-		inputLanguage.createTasks(testQueue, BuildStepTest, inputLanguage.TaskExec.LintCommand)
+		inputLanguage.createTasks(testQueue, BuildStepTest, inputLanguage.TaskExec.Lint)
 		So(inputLanguage.Workspaces, ShouldNotBeNil)
 	})
 }
@@ -44,8 +44,8 @@ func Test_preliminaryCommands(t *testing.T) {
 	inputLanguage := &Language{
 		Name: "test",
 		TaskExec: &TaskCommands{
-			LintCommand:   "echo lint command",
-			SetUpCommands: []string{""},
+			Lint:  "echo lint command",
+			SetUp: []string{""},
 		},
 	}
 	Convey("empty command passed", t, func() {
@@ -69,7 +69,7 @@ func Test_preliminaryCommands(t *testing.T) {
 		undo := replaceStubs()
 		defer undo()
 
-		inputLanguage.TaskExec.SetUpCommands = []string{"fail command"}
+		inputLanguage.TaskExec.SetUp = []string{"fail command"}
 		langs := []*Language{inputLanguage}
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{"fail", "command"}) {
