@@ -17,6 +17,7 @@ import (
 const (
 	goExec   = "go"
 	golangId = "golang"
+	goMod    = "go.mod"
 )
 
 // goGetStdLibs returns the list of go std libs for the current go executable.
@@ -56,7 +57,7 @@ func goGetChangedModFileDeps(branch string) (changeSet []string, languageVersion
 		if d.IsDir() {
 			return nil
 		}
-		if filepath.Base(path) == "go.mod" {
+		if filepath.Base(path) == goMod {
 			var cs []string
 			cs, walkErr = singleFileDiff(path, branch)
 			changeSet = append(changeSet, cs...)
@@ -72,20 +73,22 @@ func singleFileDiff(filename, branch string) (changes []string, err error) {
 	branch = strings.TrimSpace(branch)
 	var path string
 
-	if path, err = exec.LookPath("git"); err == nil {
-		cmd := &exec.Cmd{
-			Path: path,
-			Args: []string{path, "diff"},
-		}
-		if branch != "" {
-			cmd.Args = append(cmd.Args, branch)
-		}
-		cmd.Args = append(cmd.Args, []string{"--", filename}...)
+	path, err = exec.LookPath("git")
+	if err != nil {
+		return
+	}
+	cmd := &exec.Cmd{
+		Path: path,
+		Args: []string{path, "diff"},
+	}
+	if branch != "" {
+		cmd.Args = append(cmd.Args, branch)
+	}
+	cmd.Args = append(cmd.Args, []string{"--", filename}...)
 
-		var b []byte
-		if b, err = cmd.Output(); err == nil {
-			changes = pruneAdditiveChanges(getLines(b, []byte{'\n'}))
-		}
+	var b []byte
+	if b, err = cmd.Output(); err == nil {
+		changes = pruneAdditiveChanges(getLines(b, []byte{'\n'}))
 	}
 
 	return
@@ -117,7 +120,7 @@ func getLines(input, splitOn []byte) (lines []string) {
 
 func goDidLanguageVersionChange(modDiff []string) (didChange bool) {
 	for _, line := range modDiff {
-		if strings.Split(line, " ")[0] == "go" {
+		if strings.Split(line, " ")[0] == goExec {
 			didChange = true
 			break
 		}
