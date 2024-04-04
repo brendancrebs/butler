@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"reflect"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -72,7 +71,7 @@ func Test_preliminaryCommands(t *testing.T) {
 		inputLanguage.TaskExec.SetUp = []string{"fail command"}
 		langs := []*Language{inputLanguage}
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
-			if reflect.DeepEqual(cmd.Args, []string{"fail", "command"}) {
+			if len(cmd.Args) == 2 && cmd.Args[0] == "fail" {
 				return nil, errors.New("test command failed")
 			}
 			return nil, nil
@@ -95,7 +94,7 @@ func Test_executeUserMethods(t *testing.T) {
 		defer undo()
 
 		execStartStub = func(cmd *exec.Cmd) error {
-			if reflect.DeepEqual(cmd.Args, []string{"fail", "command"}) {
+			if len(cmd.Args) == 2 && cmd.Args[0] == "fail" {
 				return errors.New("test command start failed")
 			}
 			return nil
@@ -128,7 +127,7 @@ func Test_executeUserMethods(t *testing.T) {
 			return 0, nil
 		}
 		execWaitStub = func(cmd *exec.Cmd) error {
-			if reflect.DeepEqual(cmd.Args, []string{"fail", "command"}) {
+			if len(cmd.Args) == 2 && cmd.Args[0] == "fail" {
 				return errors.New("test command wait failed")
 			}
 			return nil

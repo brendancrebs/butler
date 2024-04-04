@@ -94,7 +94,7 @@ func (bc *ButlerConfig) Load(configPath string) (err error) {
 
 // Sets defaults for the Butler config by satisfying the go yaml package v2 unmarshaler interface.
 // https://pkg.go.dev/gopkg.in/yaml.v2#Unmarshaler
-func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err error) {
 	type defaultConfig ButlerConfig
 	defaults := defaultConfig{
 		Paths: &ButlerPaths{
@@ -110,12 +110,12 @@ func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		},
 	}
 
-	if err := unmarshal(&defaults); err != nil {
-		return err
+	if err = unmarshal(&defaults); err != nil {
+		return
 	}
 
 	*bc = ButlerConfig(defaults)
-	return nil
+	return
 }
 
 // Checks that fields critical for Butler operation have been correctly supplied to the config file.

@@ -25,7 +25,7 @@ languages:
 
 ### Mandatory Language options
 
-There are a handful of options language options that are mandatory for Butler to function. Each of the following options
+There are a handful of language options that are mandatory for Butler to function. Each of the following options
 must be set for every language defined under the `languages` tag.
 
 #### name
@@ -45,12 +45,27 @@ name: "golang"
 
 - Type: string array
 
-- Description: `filePatterns` is a field for the user to supply file pattern strings associated with code files
-  for this language. Butler will use this to build workspaces. The file pattern could be a file extension, a common file
-  name, or a specific file path. Keep in mind that Butler will execute the commands you supply in the directories it
-  find these files.
+- Description: `filePatterns` is a field for the user to supply pattern strings associated with code files for
+  a language. The file pattern could be a file extension, a common file name, a specific file path, or any combination
+  of these. When a directory with a defined file pattern is found, Butler will create a `workspace` for this directory.
+  A `workspace` is a directory that contains the relevant files for command execution.
+
+  The commands that get defined for a language will get executed in all `workspaces` that Butler finds for that
+  language. Keep this in mind when choosing which file pattern(s) to use. Using the example of Javascript below: a
+  `package.json` file will typically live in a parent directory of the actual code files it represents and will contain
+  the necessary scripts for building, testing, etc. If you attempt adding the `.js` extension to the list of file
+  patterns for Javascript, the commands you give to Butler will be executed in the directory where the `package.json`
+  is, AND the directory where the `.js` files are. For a case like this you would select just one of the patterns to
+  avoid executing commands in directories they weren't intended to be run in.
 
 - Examples:
+
+Example for Javascript:
+
+```yaml
+filePatterns:
+  - "package.json"
+```
 
 Example for C:
 
@@ -60,9 +75,6 @@ filePatterns:
   - ".h"
 ```
 
-Example for Javascript:
+### Language Commands
 
-```yaml
-filePatterns:
-  - "package.json"
-```
+For Butler to run lint, test, build, or publish code for a language, appropriate shell commands should be provided

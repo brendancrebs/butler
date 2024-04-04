@@ -126,7 +126,6 @@ func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
 	} else if lang.DepCommands.StandardLibrary != "" {
 		lang.StdLibDeps, err = ExecuteUserMethods(lang.DepCommands.StandardLibrary, lang.Name)
 	}
-
 	if err != nil {
 		return
 	}
@@ -143,7 +142,7 @@ func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
 func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, command string) {
 	for _, ws := range lang.Workspaces {
 		if ws.IsDirty {
-			command = replaceSubstring(command, "%w", ws.Location)
+			command = strings.ReplaceAll(command, "%w", ws.Location)
 			createCmd := func() *exec.Cmd {
 				return &exec.Cmd{
 					Path: ws.Location,
@@ -153,11 +152,6 @@ func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, command stri
 			taskQueue.Enqueue(createTask(ws.Location, lang.Name, ws.Location, 0, step, createCmd))
 		}
 	}
-}
-
-// formats command strings from the butler config
-func replaceSubstring(input string, substring string, path string) string {
-	return strings.ReplaceAll(input, substring, path)
 }
 
 func (lang *Language) validateLanguage() error {
