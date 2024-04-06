@@ -7,7 +7,7 @@ SEL Confidential
 
 ## Introduction
 
-For Butler to execute tasks for a language in your repository, you must first supply information about that language to
+For Butler to execute `tasks` for a language in your repository, you must first supply information about that language to
 the config. You will supply each language for Butler to recognize as a list under the label of `languages`. An example is
 shown below:
 
@@ -75,6 +75,132 @@ filePatterns:
   - ".h"
 ```
 
-### Language Commands
+### Language Task Commands
 
-For Butler to run lint, test, build, or publish code for a language, appropriate shell commands should be provided
+For Butler to run `tasks` for a language, appropriate shell commands should be provided for building, testing,
+linting, ect. To set any number of these commands, you must first create a `taskCommands` tag in the language options
+like so:
+
+```yaml
+languages:
+  - name: "golang"
+    taskCommands:
+      lint: "example lint command"
+      test: "example test command"
+    ...options...
+  - name: "python"
+    ...options...
+```
+
+Each of the following fields can only be defined under the `taskCommands` tag. All of these commands are optional, but
+keep in mind that Butler won't do anything if it isn't provided with commands to execute.
+
+#### setUp
+
+- Type: string array
+
+- Description: `setUp` is a field where you can provide commands that will be executed once as a part of a global set up
+  before any `workspaces` are collected, dependencies are collected, or `tasks` executed for a language. You would add
+  commands here if you want something about the build server environment or the language to be altered before Butler
+  does anything related to that language.
+
+- Example
+
+```yaml
+taskCommands:
+  setUp:
+    - "example preliminary command"
+```
+
+#### lint
+
+- Type: string
+
+- Description: `lint` is the field where you supply the shell command you wish to have executed during the linting
+  stage for the given language.
+
+- Example:
+
+```yaml
+taskCommands:
+  lint: "go lint"
+```
+
+#### test
+
+- Type: string
+
+- Description: `test` is the field where you supply the shell command you wish to have executed during the testing
+  stage for the given language.
+
+- Example:
+
+```yaml
+taskCommands:
+  lint: "go lint"
+  test: "go test"
+```
+
+#### build
+
+- Type: string
+
+- Description: `build` is the field where you supply the shell command you wish to have executed during the building
+  stage for the given language.
+
+- Example:
+
+```yaml
+taskCommands:
+  lint: "go lint"
+  test: "go test"
+  build: "go build"
+```
+
+#### publish
+
+- Type: string
+
+- Description: `publish` is the field where you supply the shell command you wish to have executed during the publishing
+  stage for the given language.
+
+- Example:
+
+```yaml
+taskCommands:
+  lint: "go lint"
+  test: "go test"
+  build: "go build"
+  publish: "go publish"
+```
+
+### Language Dependencies Overview
+
+This section relates to the gathering of dependencies for a language. This is completely optional, but the inclusion of
+dependency collection can lead to more efficient builds. The point of gathering language dependencies is that if certain
+dependencies are updated in a pull request, all code using that dependency will need to be built, tested, ect. If you
+choose not to supply methods for determining a language's dependencies, Butler cannot determine which code is or isn't
+using an updated dependency. As a result Butler will execute a full build every time it's run. This means all possible
+tasks will run, even on code that doesn't have a git diff. If Butler is aware of what dependencies have been changed, it
+can exclude certain code from the build process which will speed up build times in many cases.
+
+There are three types of dependencies Butler can track. The first are external dependencies which refers to any third
+party dependencies that are used by a language in the entire repository. This list of external dependencies will be added
+to a list of workspaces which have been marked as `dirty` for having a git diff. This is because those `workspaces`
+could be partially or fully exported as dependencies themselves. Therefore they should be treated in the same manner that
+updated third party dependencies are.
+
+The second type are called `workspace` dependencies. These are dependencies that are used by a particular `workspace`.
+If this feature is utilized, each `workspace` will be tracked by Butler with the list of what dependencies it's using.
+For Butler's language dependency feature to function properly, both of these dependency types must be tracked. The
+reason is that Butler will attempt to determine which of the external dependencies have been changed. A list of these
+changed dependencies will be compared against the dependencies being used in each `workspace` to determine if that
+`workspace` is `dirty` or not. A `dirty workspace` is a `workspace` that requires rebuild. If a `workspace` imports
+something from another workspace that has been marked as dirty, it too will be marked as dirty.
+
+The third type will be standard library dependencies for a language. You may give Butler the option to track these so
+that they can be identified and excluded. Standard library dependencies should typically be excluded because we can
+assume that any standard library imports are tied to the language version. If the language version has been changed in
+the pull request, this will automatically trigger a full Butler build. Otherwise the standard library imports can safely
+be excluded from the various `workspace` dependency lists and the external dependency list. If you wish to use Butler's
+dependency gathering feature, this is optional but recommended.
