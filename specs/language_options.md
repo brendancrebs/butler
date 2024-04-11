@@ -249,19 +249,24 @@ dependencyCommands:
 
 ### Butler Ignore
 
-The `.butler.ignore.yaml` file can be used to store the `allowed-paths` and `blocked-paths`. To use this feature, add a
-file with the name `.butler.ignore.yaml` at the root of the repo. Then you may add the allowed/blocked paths with this
-same syntax as specified for the allowed/blocked paths in the base config above.
+// I don't think this file makes sense. Ignore files in all other tooling tend to indicate that all files by default are
+// included and you can mark the ones that are "excluded" with the use of the ignore file. I think for this to match my
+// mental model of an ignore I need the allow-paths to not reside in it. And when that happens, I would expect it to no
+// longer be a yaml file, but a plain text file like a .gitignore and we'd just call it .butlerignore
+
+The `.butler.ignore.yaml` file can be used to store the `allowedPaths` and `ignoredPaths`. To use this feature, add a
+file with the name `.butler.ignore.yaml` at the root of the repo. Then you may add the allowed/ignored paths with this
+same syntax as specified for the allowed/ignored paths in the base config above.
 
 #### Butler Ignore Example
 
 ```yaml
-allowed-paths:
+allowedPaths:
   - apps/butler
   - interfaces
   - lib/helpers
 
-blocked-paths:
+ignoredPaths:
   - node_modules
   - apps/butler/test_data
   - scripts

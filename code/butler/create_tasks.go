@@ -63,7 +63,7 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 }
 
 func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, err error) {
-	allPaths = getFilePaths([]string{bc.Paths.WorkspaceRoot}, bc.Paths.AllowedPaths, bc.Paths.BlockedPaths, true)
+	allPaths = getFilePaths([]string{bc.Paths.WorkspaceRoot}, bc.Paths.AllowedPaths, bc.Paths.IgnorePaths, true)
 
 	if bc.PublishBranch != "" && !bc.Task.ShouldRunAll {
 		allDirtyPaths, err := getDirtyPaths(bc.PublishBranch)
@@ -113,11 +113,11 @@ func getCurrentBranch() (branch string, err error) {
 
 // Takes a set of directories and calls recurseFilePath on each. recurseFilePaths will return the
 // children of each directory and all of the child files will get returned by getFilePaths.
-func getFilePaths(dirs, allowed, blocked []string, shouldRecurse bool) []string {
+func getFilePaths(dirs, allowed, ignored []string, shouldRecurse bool) []string {
 	paths := make([]string, len(dirs))
 
 	for _, base := range dirs {
-		paths = recurseFilepaths(paths, allowed, blocked, base, shouldRecurse)
+		paths = recurseFilepaths(paths, allowed, ignored, base, shouldRecurse)
 	}
 
 	return paths
@@ -125,23 +125,23 @@ func getFilePaths(dirs, allowed, blocked []string, shouldRecurse bool) []string 
 
 // Reads the directory at `path` and either appends filepaths or appends the result of a further
 // call to recurseFilepaths.
-func recurseFilepaths(paths, allowed, blocked []string, path string, shouldRecurse bool) []string {
+func recurseFilepaths(paths, allowed, ignored []string, path string, shouldRecurse bool) []string {
 	fileInfos, _ := os.ReadDir(path)
 	for _, fi := range fileInfos {
 		path := filepath.Join(path, fi.Name())
-		if !isAllowed(path, allowed, blocked) {
+		if !isAllowed(path, allowed, ignored) {
 			continue
 		}
 		if !fi.IsDir() {
 			paths = append(paths, path)
 		} else if shouldRecurse {
-			paths = recurseFilepaths(paths, allowed, blocked, path, shouldRecurse)
+			paths = recurseFilepaths(paths, allowed, ignored, path, shouldRecurse)
 		}
 	}
 	return paths
 }
 
-func isAllowed(path string, allowed, blocked []string) bool {
+func isAllowed(path string, allowed, ignored []string) bool {
 	isAllowed := false
 	for _, key := range allowed {
 		if strings.Contains(path, key) {
@@ -154,15 +154,15 @@ func isAllowed(path string, allowed, blocked []string) bool {
 		return false
 	}
 
-	isBlocked := false
-	for _, key := range blocked {
+	isIgnored := false
+	for _, key := range ignored {
 		if strings.Contains(path, key) {
-			isBlocked = true
+			isIgnored = true
 			break
 		}
 	}
 
-	return !isBlocked
+	return !isIgnored
 }
 
 // getDirtyPaths calls 'git diff --name-only {branch}' if branch is not blank, or
@@ -240,6 +240,7 @@ func EvaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
 		}
 	}
 
+could add comment on this block as to what the intent is
 	madeAdditionalWorkspacesDirty := true
 	for madeAdditionalWorkspacesDirty {
 		madeAdditionalWorkspacesDirty = false

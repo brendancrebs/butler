@@ -33,7 +33,6 @@ type BuildStep int
 // BuildStep enum values.
 const (
 	BuildStepUnknown BuildStep = iota
-	BuildStepSpec              // for future addition of specification verification within the repo.
 	BuildStepLint              // language level linting: spelling and static analysis.
 	BuildStepTest              // unit tests and coverage.
 	BuildStepBuild             // build, package and deployment steps.
@@ -45,7 +44,7 @@ func (step BuildStep) String() string {
 	if step < BuildStepUnknown || step > BuildStepPublish {
 		step = BuildStepUnknown
 	}
-	return []string{"Unknown", "Spec", "Lint", "Test", "Build", "Publish"}[step]
+	return []string{"Unknown", "Lint", "Test", "Build", "Publish"}[step]
 }
 
 // MarshalJSON marshals the enum as a quoted json string.
@@ -60,14 +59,13 @@ func (step *BuildStep) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	// Note that if the string cannot be found then it will be set to the zero value, 'Created' in this case.
+	// Note that if the string cannot be found then it will be set to the zero value.
 	*step = toBuildStep[j]
 	return nil
 }
 
 var toBuildStep = map[string]BuildStep{
 	"Unknown": BuildStepUnknown,
-	"Spec":    BuildStepSpec,
 	"Lint":    BuildStepLint,
 	"Test":    BuildStepTest,
 	"Build":   BuildStepBuild,

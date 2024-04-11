@@ -29,10 +29,10 @@ var (
 	envBranchName       = strings.TrimSpace(GetEnvOrDefault(envBranch, ""))
 )
 
-// ButlerPaths specifies the allowed and blocked paths within the .butler.ignore.yaml.
+// ButlerPaths specifies the allowed and ignored paths within the .butler.ignore.yaml.
 type ButlerPaths struct {
 	AllowedPaths    []string `yaml:"allowedPaths,omitempty"`
-	BlockedPaths    []string `yaml:"blockedPaths,omitempty"`
+	IgnorePaths     []string `yaml:"ignorePaths,omitempty"`
 	CriticalPaths   []string `yaml:"criticalPaths,omitempty"`
 	WorkspaceRoot   string   `yaml:"workspaceRoot,omitempty"`
 	ResultsFilePath string   `yaml:"resultsFilePath,omitempty"`
@@ -133,10 +133,6 @@ func (bc *ButlerConfig) ValidateConfig() (err error) {
 		}
 	}
 
-	if bc.Paths.AllowedPaths == nil {
-		return errors.New(`butler has not been given permission to search for workspaces in any directories.\n Please enter a list of directories in the 'allowedPaths' config field`)
-	}
-
 	if bc.Languages == nil {
 		return errors.New(`no languages have been provided in the config`)
 	}
@@ -186,7 +182,7 @@ func (bc *ButlerConfig) LoadButlerIgnore() (err error) {
 	err = yaml.Unmarshal(content, &paths)
 
 	bc.Paths.AllowedPaths = concatPaths(paths.AllowedPaths, bc.Paths.AllowedPaths)
-	bc.Paths.BlockedPaths = concatPaths(paths.BlockedPaths, bc.Paths.BlockedPaths)
+	bc.Paths.IgnorePaths = concatPaths(paths.IgnorePaths, bc.Paths.IgnorePaths)
 	bc.Paths.CriticalPaths = concatPaths(paths.CriticalPaths, bc.Paths.CriticalPaths)
 
 	return

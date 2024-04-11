@@ -6,7 +6,7 @@ publishBranch: "main"
 paths:
   allowedPaths:
     - test_repo
-  blockedPaths:
+  ignorePaths:
     - blocked_dir
   workspaceRoot: "./test_data/test_configs/bad_ignore_configs/ignore_dir"
 

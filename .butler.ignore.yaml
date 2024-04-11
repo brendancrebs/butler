@@ -5,7 +5,7 @@ allowedPaths:
   - code
   - test_repo
 
-blockedPaths:
+ignorePaths:
   - node_modules
   - coverage
   - specs

@@ -44,7 +44,7 @@ func Test_loadConfig(t *testing.T) {
 			PublishBranch: "main",
 			Paths: &butler.ButlerPaths{
 				AllowedPaths:    []string{"good_path", "test_repo"},
-				BlockedPaths:    []string{"bad_path", "blocked_dir"},
+				IgnorePaths:     []string{"bad_path", "blocked_dir"},
 				WorkspaceRoot:   expectedRoot,
 				ResultsFilePath: "./butler_results.json",
 			},
@@ -162,22 +162,6 @@ func Test_validateConfig(t *testing.T) {
 		err := testConfig.ValidateConfig()
 		So(err.Error(), ShouldContainSubstring, "no languages have been provided in the config")
 	})
-
-	Convey("no allowed paths added to config", t, func() {
-		testConfig := &butler.ButlerConfig{
-			PublishBranch: "main",
-			Paths: &butler.ButlerPaths{
-				WorkspaceRoot: ".",
-			},
-			Task: &butler.TaskConfigurations{
-				Coverage: "100",
-			},
-			Languages: []*butler.Language{testLanguage},
-		}
-
-		err := testConfig.ValidateConfig()
-		So(err.Error(), ShouldContainSubstring, "butler has not been given permission to search for workspaces in any directories.")
-	})
 }
 
 func Test_loadButlerIgnore(t *testing.T) {
@@ -192,7 +176,7 @@ func Test_loadButlerIgnore(t *testing.T) {
 		expected := &butler.ButlerConfig{
 			Paths: &butler.ButlerPaths{
 				AllowedPaths:  []string{"good_path"},
-				BlockedPaths:  []string{"bad_path", "blocked_dir"},
+				IgnorePaths:   []string{"bad_path", "blocked_dir"},
 				WorkspaceRoot: ".",
 			},
 		}
@@ -214,7 +198,7 @@ func Test_loadButlerIgnore(t *testing.T) {
 
 		So(err, ShouldBeNil)
 		So(config.Paths.AllowedPaths, ShouldBeNil)
-		So(config.Paths.BlockedPaths, ShouldBeNil)
+		So(config.Paths.IgnorePaths, ShouldBeNil)
 	})
 	Convey("Failure to parse .butler.ignore.", t, func() {
 		temp := butler.ConfigPath
@@ -230,6 +214,6 @@ func Test_loadButlerIgnore(t *testing.T) {
 
 		So(err, ShouldNotBeNil)
 		So(testConfig.Paths.AllowedPaths, ShouldEqual, []string{"good_path"})
-		So(testConfig.Paths.BlockedPaths, ShouldBeNil)
+		So(testConfig.Paths.IgnorePaths, ShouldBeNil)
 	})
 }

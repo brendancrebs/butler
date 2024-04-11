@@ -22,7 +22,7 @@ implementation steps to accomplish this:
    be defined at the root of the repo. These paths can also be defined in the base config.
 
 3. When the config file have been read from, Butler will then walk through the repository to gather a list of files
-   based on the paths the user has allowed and hasn't blocked in the config file.
+   based on the paths the user has allowed and hasn't ignored in the config file.
 
 4. After an array of paths has been collected, Butler will determine units of code files to execute commands for. This
    unit will be referred to as a `workspace`. Workspaces will be constructed based on the filepaths determined

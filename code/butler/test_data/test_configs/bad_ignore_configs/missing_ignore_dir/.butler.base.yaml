@@ -17,9 +17,6 @@ languages:
   - name: "golang"
     filePatterns: 
       - ".go"
-    builtinStdLibsMethod: true
-    builtinWorkspaceDepMethod: false
-    builtinExternalDepMethod: true
     dependencyCommands:
       external: "go run ./user_commands/go_external_deps_method.go"
     taskCommands: 

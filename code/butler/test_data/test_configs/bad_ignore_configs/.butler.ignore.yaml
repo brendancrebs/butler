@@ -4,5 +4,5 @@
 allowedPaths:
   - good_path
 
-blockedPaths:
+ignorePaths:
   bad_path: true

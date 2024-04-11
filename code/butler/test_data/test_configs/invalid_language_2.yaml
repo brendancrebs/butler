@@ -6,7 +6,7 @@ paths:
   allowedPaths:
     - test_repo
 
-  blockedPaths:
+  ignorePaths:
     - blocked_dir
 
 tasks:

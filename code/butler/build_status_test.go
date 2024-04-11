@@ -10,6 +10,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+comment everything
 
 func Test_BuildStatusEnum(t *testing.T) {
 	Convey("BuildStatus Stringer Expected Output Tests", t, func() {
@@ -25,7 +26,6 @@ func Test_BuildStatusEnum(t *testing.T) {
 func Test_BuildStepEnum(t *testing.T) {
 	Convey("BuildStep Stringer Expected Output Tests", t, func() {
 		So(butler.BuildStepUnknown.String(), ShouldEqual, "Unknown")
-		So(butler.BuildStepSpec.String(), ShouldEqual, "Spec")
 		So(butler.BuildStepLint.String(), ShouldEqual, "Lint")
 		So(butler.BuildStepTest.String(), ShouldEqual, "Test")
 		So(butler.BuildStepBuild.String(), ShouldEqual, "Build")
@@ -35,16 +35,16 @@ func Test_BuildStepEnum(t *testing.T) {
 	})
 
 	Convey("BuildStep marshal JSON expected results", t, func() {
-		b, err := butler.BuildStepSpec.MarshalJSON()
+		b, err := butler.BuildStepTest.MarshalJSON()
 		So(err, ShouldBeNil)
-		So(string(b), ShouldEqual, `"Spec"`)
+		So(string(b), ShouldEqual, `"Test"`)
 	})
 
 	Convey("BuildStep unmarshal JSON expected results", t, func() {
 		var bs butler.BuildStep
-		err := bs.UnmarshalJSON([]byte(`"Spec"`))
+		err := bs.UnmarshalJSON([]byte(`"Test"`))
 		So(err, ShouldBeNil)
-		So(bs, ShouldEqual, butler.BuildStepSpec)
+		So(bs, ShouldEqual, butler.BuildStepTest)
 	})
 
 	Convey("BuildStep unmarshal JSON with error", t, func() {

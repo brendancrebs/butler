@@ -16,6 +16,7 @@ import (
 	"selinc.com/butler/code/butler/builtin"
 )
 
+// Language specifies options for an individual language defined in the butler config.
 type Language struct {
 	Name                      string              `yaml:"name,omitempty"`
 	VersionPath               string              `yaml:"versionPath,omitempty"`
@@ -31,6 +32,8 @@ type Language struct {
 	VersionChanged            bool                `yaml:"versionChanged,omitempty"`
 }
 
+// TaskCommands specifies language specific command options. These will be used to create all of the
+// tasks for a language.
 type TaskCommands struct {
 	SetUp   []string `yaml:"setUp,omitempty"`
 	Lint    string   `yaml:"lint,omitempty"`
@@ -39,6 +42,7 @@ type TaskCommands struct {
 	Publish string   `yaml:"publish,omitempty"`
 }
 
+// DependencyCommands specifies dependency gathering commands for an individual language.
 type DependencyCommands struct {
 	StandardLibrary string `yaml:"standardLibrary,omitempty"`
 	Workspace       string `yaml:"workspace,omitempty"`
@@ -102,7 +106,7 @@ func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 		err = fmt.Errorf("error starting execution of '%s': %v", cmd, err)
 		return
 	}
-
+do you anticipate this size ever being an issue?
 	buffer := make([]byte, 1024)
 	n, err := readStub(stdout, buffer)
 	if err != nil {
@@ -142,6 +146,7 @@ func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
 func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, command string) {
 	for _, ws := range lang.Workspaces {
 		if ws.IsDirty {
+consider inverting and early continue
 			command = strings.ReplaceAll(command, "%w", ws.Location)
 			createCmd := func() *exec.Cmd {
 				return &exec.Cmd{
