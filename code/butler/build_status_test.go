@@ -10,7 +10,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-comment everything
 
 func Test_BuildStatusEnum(t *testing.T) {
 	Convey("BuildStatus Stringer Expected Output Tests", t, func() {

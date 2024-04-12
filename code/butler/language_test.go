@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/spf13/cobra"
 )
 
 func Test_createTasks(t *testing.T) {
@@ -47,6 +48,7 @@ func Test_preliminaryCommands(t *testing.T) {
 			SetUp: []string{""},
 		},
 	}
+	cmd := &cobra.Command{}
 	Convey("empty command passed", t, func() {
 		langs := []*Language{inputLanguage}
 
@@ -54,7 +56,7 @@ func Test_preliminaryCommands(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		err := langs[0].preliminaryCommands()
+		err := langs[0].preliminaryCommands(cmd)
 
 		w.Close()
 		out, _ := io.ReadAll(r)
@@ -77,7 +79,7 @@ func Test_preliminaryCommands(t *testing.T) {
 			return nil, nil
 		}
 
-		err := langs[0].preliminaryCommands()
+		err := langs[0].preliminaryCommands(cmd)
 		So(err.Error(), ShouldContainSubstring, "error executing 'fail command'\nerror: test command failed\noutput:")
 	})
 }

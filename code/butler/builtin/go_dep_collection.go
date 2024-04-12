@@ -15,14 +15,14 @@ import (
 )
 
 const (
-	goExec   = "go"
+	goName   = "go"
 	golangId = "golang"
 	goMod    = "go.mod"
 )
 
 // goGetStdLibs returns the list of go std libs for the current go executable.
 func goGetStdLibs() ([]string, error) {
-	goPath, _ := exec.LookPath(goExec)
+	goPath, _ := exec.LookPath(goName)
 	cmd := exec.Command(goPath, "list", "std")
 
 	output, err := cmd.Output()
@@ -38,7 +38,7 @@ func goGetStdLibs() ([]string, error) {
 // goGetPkgDeps returns the list of go package dependencies for a given package.
 // It returns nothing if the folder is not or does not contains any go files.
 func goGetPkgDeps(directory string) (results []string) {
-	goPath, _ := exec.LookPath(goExec)
+	goPath, _ := exec.LookPath(goName)
 	cmd := exec.Command(goPath, "list", "-test", "-f", `{{join .Deps "\n"}}`, directory)
 
 	output, _ := cmd.Output()
@@ -88,14 +88,14 @@ func singleFileDiff(filename, branch string) (changes []string, err error) {
 
 	var b []byte
 	if b, err = cmd.Output(); err == nil {
-		changes = pruneAdditiveChanges(getLines(b, []byte{'\n'}))
+		changes = pruneAdditiveChanges(convertLinesToStrings(b, []byte{'\n'}))
 	}
 
 	return
 }
 
 func pruneAdditiveChanges(lines []string) (changes []string) {
-	changes = make([]string, 0)
+	changes = make([]string, len(lines))
 	for _, line := range lines {
 		if len(line) > 2 && line[0] == '+' && line[1] != '+' {
 			line = strings.Split(strings.TrimSpace(line[1:]), " ")[0]
@@ -105,7 +105,7 @@ func pruneAdditiveChanges(lines []string) (changes []string) {
 	return
 }
 
-func getLines(input, splitOn []byte) (lines []string) {
+func convertLinesToStrings(input, splitOn []byte) (lines []string) {
 	lines = make([]string, 0)
 	split := bytes.Split(input, splitOn)
 	for _, lineBytes := range split {
@@ -120,7 +120,7 @@ func getLines(input, splitOn []byte) (lines []string) {
 
 func goDidLanguageVersionChange(modDiff []string) (didChange bool) {
 	for _, line := range modDiff {
-		if strings.Split(line, " ")[0] == goExec {
+		if strings.Split(line, " ")[0] == goName {
 			didChange = true
 			break
 		}

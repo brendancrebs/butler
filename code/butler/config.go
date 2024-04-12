@@ -55,6 +55,7 @@ type ButlerConfig struct {
 	Languages     []*Language         `yaml:"languages,omitempty"`
 }
 
+// updates the config settings with values passed using the cli.
 func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConfig) {
 	bc.PublishBranch = useFlagIfChanged(bc.PublishBranch, flags.PublishBranch,
 		cmd.Flags().Changed("publish-branch"))
@@ -69,7 +70,7 @@ func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConf
 		cmd.Flags().Changed("publish"))
 }
 
-// loads base Butler config
+// loads Butler config.
 func (bc *ButlerConfig) Load(configPath string) (err error) {
 	if _, err = os.Stat(configPath); err != nil {
 		return
@@ -144,6 +145,8 @@ func (bc *ButlerConfig) ValidateConfig() (err error) {
 	return
 }
 
+// validates that the workspace root has been set in the config. If so Butler will cd into the
+// workspace root directory and set the WORKSPACE_ROOT environment variable.
 func (bc *ButlerConfig) setWorkspace() (err error) {
 	if bc.Paths.WorkspaceRoot == "" {
 		return errors.New("no workspace root has been set.\nPlease set a workspace root in the config")
@@ -158,6 +161,7 @@ func (bc *ButlerConfig) setWorkspace() (err error) {
 	return
 }
 
+// Uses go stringer interface for printing the Butler config.
 func (bc *ButlerConfig) String() string {
 	configPretty, _ := yaml.Marshal(bc)
 	return fmt.Sprintf(`Butler Configuration:\n

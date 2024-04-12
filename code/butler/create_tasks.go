@@ -31,7 +31,7 @@ func (q *Queue) Size() int {
 	return len(q.tasks)
 }
 
-// This function will return a queue populated with tasks
+// Returns a queue populated with tasks
 func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error) {
 	taskQueue = &Queue{tasks: make([]*Task, 0)}
 	allPaths, dirtyFolders, err := butlerSetup(bc)
@@ -40,11 +40,11 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 	}
 
 	for _, lang := range bc.Languages {
-		if err = lang.preliminaryCommands(); err != nil {
+		if err = lang.preliminaryCommands(cmd); err != nil {
 			return
 		}
 		if bc.PublishBranch != "" {
-			if err = lang.getExternalDeps(bc); err != nil {
+			if err = lang.getDependencies(bc); err != nil {
 				return
 			}
 			dirtyFolders = append(dirtyFolders, lang.ExternalDeps...)
@@ -62,6 +62,9 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 	return
 }
 
+// butlerSetup first gathers all non-blocked file paths in a repo. If a repo uses git, files with a
+// git diff will be collected for determine dirty workspaces later. This will also be used to
+// determine if a critical file has been changed.
 func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, err error) {
 	allPaths = getFilePaths([]string{bc.Paths.WorkspaceRoot}, bc.Paths.AllowedPaths, bc.Paths.IgnorePaths, true)
 
@@ -96,8 +99,8 @@ func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 	return
 }
 
-// getCurrentBranch returns the whitespace trimmed result of `git branch --show-current`
-// which should be the branch, or an error.
+// getCurrentBranch returns the whitespace trimmed result of `git branch --show-current` which
+// should be the branch, or an error.
 func getCurrentBranch() (branch string, err error) {
 	if branch = GetEnvOrDefault(envBranch, ""); branch != "" {
 		return
@@ -141,6 +144,8 @@ func recurseFilepaths(paths, allowed, ignored []string, path string, shouldRecur
 	return paths
 }
 
+// Checks a path to see if it is on a paths marked as 'allowed' in the config and checks that it
+// also hasn't been blocked.
 func isAllowed(path string, allowed, ignored []string) bool {
 	isAllowed := false
 	for _, key := range allowed {
@@ -165,9 +170,8 @@ func isAllowed(path string, allowed, ignored []string) bool {
 	return !isIgnored
 }
 
-// getDirtyPaths calls 'git diff --name-only {branch}' if branch is not blank, or
-// 'git diff --name-only' without a branch.  It returns a list of file names that
-// changed.
+// getDirtyPaths calls 'git diff --name-only {branch}' if branch is not blank, or 'git diff
+// --name-only' without a branch.  It returns a list of file names that changed.
 func getDirtyPaths(branch string) ([]string, error) {
 	branch = strings.TrimSpace(branch)
 
@@ -197,6 +201,8 @@ func getLines(input, splitOn []byte) (lines []string) {
 	return
 }
 
+// Checks if any of the critical paths listed in the config are dirty paths or the parent to dirty
+// paths in the case of directories.
 func CriticalPathChanged(dirtyPaths, criticalPaths []string) (result bool) {
 	for _, path := range criticalPaths {
 		for _, dirtyPath := range dirtyPaths {
@@ -225,8 +231,10 @@ func getUniqueFolders(paths []string) []string {
 	return keys
 }
 
+// Takes a language's workspaces and the set of dirty folders and determines which workspaces
+// require tasks.
 func EvaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
-	workspaceIsDirty := make(map[string]bool)
+	dirtyWorkspaces := make(map[string]bool)
 	mapDFs := convertToStringBoolMap(dirtyFolders)
 
 	for _, ws := range workspaces {
@@ -235,20 +243,19 @@ func EvaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
 				continue
 			}
 			ws.IsDirty = true
-			workspaceIsDirty[ws.Location] = true
+			dirtyWorkspaces[ws.Location] = true
 			break
 		}
 	}
 
-could add comment on this block as to what the intent is
-	madeAdditionalWorkspacesDirty := true
-	for madeAdditionalWorkspacesDirty {
-		madeAdditionalWorkspacesDirty = false
+	madeWsDirty := true
+	for madeWsDirty {
+		madeWsDirty = false
 		for _, ws := range workspaces {
 			for _, dep := range ws.Dependencies {
 				initialState := ws.IsDirty
-				ws.IsDirty = ws.IsDirty || mapDFs[dep] || workspaceIsDirty[dep]
-				madeAdditionalWorkspacesDirty = madeAdditionalWorkspacesDirty || (initialState != ws.IsDirty)
+				ws.IsDirty = ws.IsDirty || mapDFs[dep] || dirtyWorkspaces[dep]
+				madeWsDirty = madeWsDirty || (initialState != ws.IsDirty)
 			}
 		}
 	}

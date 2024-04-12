@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-may just be showing how much I don't know about butler in general, but is there a reason you need to store both Attempts and Retries? Could Retries not be generated if Attempts > 1?
 // Task maintains state and output from various build tasks.
 type Task struct {
 	Name        string           `json:"name"`

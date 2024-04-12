@@ -49,6 +49,7 @@ type DependencyCommands struct {
 	External        string `yaml:"external,omitempty"`
 }
 
+// Creates tasks for all languages for each build step.
 func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	now := time.Now()
 	fmt.Fprintf(cmd.OutOrStdout(), "Enumerating repo. Creating build, lint, and test tasks...\n")
@@ -65,27 +66,27 @@ func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 }
 
 // Executes commands that must be run before the creation of tasks
-func (lang *Language) preliminaryCommands() (err error) {
-	for _, cmd := range lang.TaskExec.SetUp {
-		fmt.Printf("\nexecuting: %s...  ", cmd)
+func (lang *Language) preliminaryCommands(cmd *cobra.Command) (err error) {
+	for _, command := range lang.TaskExec.SetUp {
+		fmt.Fprintf(cmd.OutOrStdout(), "\nexecuting: %s...  ", command)
 
-		commandParts := splitCommand(cmd)
+		commandParts := splitCommand(command)
 		if len(commandParts) == 0 {
-			fmt.Println("empty command, skipping")
+			fmt.Fprintln(cmd.OutOrStdout(), "empty command, skipping")
 			continue
 		}
-		cmd := exec.Command(commandParts[0], commandParts[1:]...)
+		command := exec.Command(commandParts[0], commandParts[1:]...)
 
-		if output, err := execOutputStub(cmd); err != nil {
-			err = fmt.Errorf("error executing '%s'\nerror: %v\noutput: %v", cmd, err, output)
-			return err
+		if output, err := execOutputStub(command); err != nil {
+			return fmt.Errorf("error executing '%s'\nerror: %v\noutput: %v", command, err, output)
 		} else {
-			fmt.Printf("success\n")
+			fmt.Fprintln(cmd.OutOrStdout(), "success")
 		}
 	}
 	return
 }
 
+// tasks a command as a single string and splits it into multiple parts.
 func splitCommand(cmd string) []string {
 	commandParts := []string{}
 	splitCmd := strings.Fields(cmd)
@@ -93,6 +94,8 @@ func splitCommand(cmd string) []string {
 	return commandParts
 }
 
+// executes a command supplied for a user and awaits the response. Any user supplied command is
+// expected to pipe an array of strings to stdout as the output of the command.
 func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 	commandParts := splitCommand(cmd)
 	if len(commandParts) == 0 {
@@ -106,7 +109,7 @@ func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 		err = fmt.Errorf("error starting execution of '%s': %v", cmd, err)
 		return
 	}
-do you anticipate this size ever being an issue?
+
 	buffer := make([]byte, 1024)
 	n, err := readStub(stdout, buffer)
 	if err != nil {
@@ -124,7 +127,9 @@ do you anticipate this size ever being an issue?
 	return
 }
 
-func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
+// Gathers all the standard library dependencies and external third party dependencies for a language
+// in the repository.
+func (lang *Language) getDependencies(bc *ButlerConfig) (err error) {
 	if lang.BuiltinStdLibsMethod {
 		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
 	} else if lang.DepCommands.StandardLibrary != "" {
@@ -143,10 +148,11 @@ func (lang *Language) getExternalDeps(bc *ButlerConfig) (err error) {
 	return
 }
 
+// Creates a task object for each of a language's workspaces. Each new task will be pushed to the
+// task queue.
 func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, command string) {
 	for _, ws := range lang.Workspaces {
 		if ws.IsDirty {
-consider inverting and early continue
 			command = strings.ReplaceAll(command, "%w", ws.Location)
 			createCmd := func() *exec.Cmd {
 				return &exec.Cmd{
@@ -159,6 +165,7 @@ consider inverting and early continue
 	}
 }
 
+// determines if the options set for a language in the config are valid.
 func (lang *Language) validateLanguage() error {
 	if lang.Name == "" {
 		return errors.New("a language supplied in the config without a name. Please supply a language identifier for each language in the config")

@@ -11,6 +11,8 @@ import (
 	"selinc.com/butler/code/butler/builtin"
 )
 
+// Represents the location where tasks will be executed for a language. It also tracks dependencies
+// being used within the workspace.
 type Workspace struct {
 	Location     string
 	IsDirty      bool
@@ -29,7 +31,6 @@ func (lang *Language) getWorkspaces(paths []string, publishBranch string) {
 	lang.concurrentGetWorkspaces(allDirs, publishBranch)
 }
 
-use filepath.match
 // getMatchingDirs returns the map of directories that contain `pattern`.
 func getMatchingDirs(dirs []string, pattern string) (matches map[string]bool) {
 	matches = make(map[string]bool)
@@ -42,8 +43,7 @@ func getMatchingDirs(dirs []string, pattern string) (matches map[string]bool) {
 	return
 }
 
-use pointers
-// Returns the full set of workspaces.  Brute force multithreading, spins out the requests and lets
+// Returns the full set of workspaces. Brute force multithreading, spins out the requests and lets
 // the go runtime handle the workload.
 func (lang *Language) concurrentGetWorkspaces(allDirs map[string]bool, publishBranch string) {
 	var (
@@ -56,7 +56,7 @@ func (lang *Language) concurrentGetWorkspaces(allDirs map[string]bool, publishBr
 		// must proxy dir into a different variable to make it safe to use inside the closure.
 		go func(thisDir string) {
 			workspace := &Workspace{Location: thisDir}
-			if lang.BuiltinWorkspaceDepMethod && publishBranch != "" {
+			if lang.DepCommands.Workspace != "" && publishBranch != "" {
 				deps := builtin.GetWorkspaceDeps(lang.Name, thisDir)
 				prunedDeps := difference(deps, lang.StdLibDeps)
 				workspace.Dependencies = prunedDeps
@@ -71,7 +71,6 @@ func (lang *Language) concurrentGetWorkspaces(allDirs map[string]bool, publishBr
 	wg.Wait()
 }
 
-make generic
 // difference returns the elements in `a` that aren't in `b`.
 func difference(a, b []string) []string {
 	mb := make(map[string]struct{}, len(b))
