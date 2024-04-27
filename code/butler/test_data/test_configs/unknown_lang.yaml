@@ -22,9 +22,10 @@ languages:
   - name: "invalid"
     filePatterns:
       - "invalid.bad"
-    builtinStdLibsMethod: false
-    builtinWorkspaceDepMethod: false
-    builtinExternalDepMethod: true
+    dependencyOptions:
+      dependencyAnalysis: false
+      excludeStdLibs: false
+      externalDependencies: true
     dependencyCommands:
       workspace: "echo collect workspace deps"
     taskCommands: 

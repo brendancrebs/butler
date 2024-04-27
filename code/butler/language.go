@@ -18,18 +18,15 @@ import (
 
 // Language specifies options for an individual language defined in the butler config.
 type Language struct {
-	Name                      string              `yaml:"name,omitempty"`
-	VersionPath               string              `yaml:"versionPath,omitempty"`
-	TaskExec                  *TaskCommands       `yaml:"taskCommands,omitempty"`
-	DepCommands               *DependencyCommands `yaml:"dependencyCommands,omitempty"`
-	Workspaces                []*Workspace        `yaml:"workspaces,omitempty"`
-	StdLibDeps                []string            `yaml:"stdLibDeps,omitempty"`
-	ExternalDeps              []string            `yaml:"externalDeps,omitempty"`
-	FilePatterns              []string            `yaml:"filePatterns,omitempty"`
-	BuiltinStdLibsMethod      bool                `yaml:"builtinStdLibsMethod,omitempty"`
-	BuiltinWorkspaceDepMethod bool                `yaml:"builtinWorkspaceDepMethod,omitempty"`
-	BuiltinExternalDepMethod  bool                `yaml:"builtinExternalDepMethod,omitempty"`
-	VersionChanged            bool                `yaml:"versionChanged,omitempty"`
+	Name           string              `yaml:"name,omitempty"`
+	TaskExec       *TaskCommands       `yaml:"taskCommands,omitempty"`
+	DepOptions     *DependencyOptions  `yaml:"dependencyOptions,omitempty"`
+	DepCommands    *DependencyCommands `yaml:"dependencyCommands,omitempty"`
+	Workspaces     []*Workspace        `yaml:"workspaces,omitempty"`
+	StdLibDeps     []string            `yaml:"stdLibDeps,omitempty"`
+	ExternalDeps   []string            `yaml:"externalDeps,omitempty"`
+	FilePatterns   []string            `yaml:"filePatterns,omitempty"`
+	VersionChanged bool                `yaml:"versionChanged,omitempty"`
 }
 
 // TaskCommands specifies language specific command options. These will be used to create all of the
@@ -42,11 +39,19 @@ type TaskCommands struct {
 	Publish string   `yaml:"publish,omitempty"`
 }
 
+// DependencyOptions specifies options related to dependency analysis which aren't commands.
+type DependencyOptions struct {
+	DependencyAnalysis bool `yaml:"dependencyAnalysis,omitempty"`
+	ExcludeStdLibs     bool `yaml:"excludeStdLibs,omitempty"`
+	ExternalDeps       bool `yaml:"externalDependencies"`
+}
+
 // DependencyCommands specifies dependency gathering commands for an individual language.
 type DependencyCommands struct {
 	StandardLibrary string `yaml:"standardLibrary,omitempty"`
 	Workspace       string `yaml:"workspace,omitempty"`
 	External        string `yaml:"external,omitempty"`
+	Version         string `yaml:"version,omitempty"`
 }
 
 // Creates tasks for all languages for each build step.
@@ -130,7 +135,7 @@ func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 // Gathers all the standard library dependencies and external third party dependencies for a language
 // in the repository.
 func (lang *Language) getDependencies(bc *ButlerConfig) (err error) {
-	if lang.BuiltinStdLibsMethod {
+	if lang.DepOptions.ExcludeStdLibs {
 		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
 	} else if lang.DepCommands.StandardLibrary != "" {
 		lang.StdLibDeps, err = ExecuteUserMethods(lang.DepCommands.StandardLibrary, lang.Name)
@@ -139,7 +144,7 @@ func (lang *Language) getDependencies(bc *ButlerConfig) (err error) {
 		return
 	}
 
-	if lang.BuiltinExternalDepMethod {
+	if lang.DepOptions.ExternalDeps {
 		lang.ExternalDeps, err = builtin.GetExternalDependencies(lang.Name)
 	} else {
 		lang.ExternalDeps, err = ExecuteUserMethods(lang.DepCommands.External, lang.Name)

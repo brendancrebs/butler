@@ -68,7 +68,7 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, err error) {
 	allPaths = getFilePaths([]string{bc.Paths.WorkspaceRoot}, bc.Paths.AllowedPaths, bc.Paths.IgnorePaths, true)
 
-	if bc.PublishBranch != "" && !bc.Task.ShouldRunAll {
+	if bc.PublishBranch != "" && !bc.Task.RunAll {
 		allDirtyPaths, err := getDirtyPaths(bc.PublishBranch)
 		if err != nil {
 			return nil, nil, err
@@ -79,12 +79,14 @@ func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, er
 			return nil, nil, err
 		}
 	} else {
-		bc.Task.ShouldRunAll = true
+		bc.Task.RunAll = true
 	}
 	return
 }
 
-// Determines if Butler requires a full build.
+// Checks several conditions to see wether Butler requires a full build. A list of conditions can be
+// found in the butler_config.md file in the specs folder. In the spec it will be in the general
+// options under the "runAll" tag.
 func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 	// get current git branch name
 	currentBranch, err := getCurrentBranch()
@@ -92,9 +94,13 @@ func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 		return
 	}
 
-	bc.Task.ShouldRunAll = strings.EqualFold(GetEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
-	bc.Task.ShouldPublish = currentBranch == bc.PublishBranch
-	bc.Task.ShouldRunAll = bc.Task.ShouldRunAll || CriticalPathChanged(allDirtyPaths, bc.Paths.CriticalPaths)
+	bc.Task.RunAll = strings.EqualFold(GetEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
+	bc.Task.Publish = currentBranch == bc.PublishBranch
+	bc.Task.RunAll = bc.Task.RunAll || CriticalPathChanged(allDirtyPaths, bc.Paths.CriticalPaths)
+
+	for _, lang := range bc.Languages {
+		bc.Task.RunAll = bc.Task.RunAll || !lang.DepOptions.DependencyAnalysis
+	}
 
 	return
 }

@@ -22,11 +22,13 @@ func Test_loadConfig(t *testing.T) {
 		expectedRoot := filepath.Join(wd, "./test_data")
 
 		expectedLanguage := &butler.Language{
-			Name:                      "golang",
-			FilePatterns:              []string{".go"},
-			BuiltinStdLibsMethod:      true,
-			BuiltinWorkspaceDepMethod: true,
-			BuiltinExternalDepMethod:  false,
+			Name:         "golang",
+			FilePatterns: []string{".go"},
+			DepOptions: &butler.DependencyOptions{
+				DependencyAnalysis: true,
+				ExcludeStdLibs:     true,
+				ExternalDeps:       false,
+			},
 			DepCommands: &butler.DependencyCommands{
 				External: "go run ./test_repo/user_commands/go_external_deps_method.go",
 			},
@@ -49,12 +51,12 @@ func Test_loadConfig(t *testing.T) {
 				ResultsFilePath: "./butler_results.json",
 			},
 			Task: &butler.TaskConfigurations{
-				Coverage:      "0",
-				ShouldLint:    true,
-				ShouldTest:    true,
-				ShouldBuild:   false,
-				ShouldPublish: false,
-				ShouldRunAll:  false,
+				Coverage: "0",
+				Lint:     true,
+				Test:     true,
+				Build:    false,
+				Publish:  false,
+				RunAll:   false,
 			},
 			Languages: []*butler.Language{expectedLanguage},
 		}

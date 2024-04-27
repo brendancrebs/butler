@@ -7,7 +7,7 @@ SEL Confidential
 
 ## Introduction
 
-For Butler to execute tasks for a language in your repository, you must first supply information about that language to
+For Butler to execute `tasks` for a language in your repository, you must first supply information about that language to
 the config. You will supply each language for Butler to recognize as a list under the label of `languages`. An example is
 shown below:
 
@@ -23,17 +23,16 @@ languages:
 
 ## Specification
 
-### General Language options
+### Mandatory Language options
 
-Below are the options for each individual language that gets defined under the `languages` tag.
+There are a handful of language options that are mandatory for Butler to function. Each of the following options
+must be set for every language defined under the `languages` tag.
 
 #### name
 
 - Type: string
 
-- Required: Yes
-
-- Description: `name` is the identifier for a language. This is a mandatory option. If you wish to use built in dependency parsing methods for the
+- Description: `name` is the identifier for a language. If you wish to use built in dependency parsing methods for the
   language, the `name` field will need to match one of the supported languages for Butler.
 
 - Example:
@@ -46,14 +45,27 @@ name: "golang"
 
 - Type: string array
 
-- Required: Yes
+- Description: `filePatterns` is a field for the user to supply pattern strings associated with code files for
+  a language. The file pattern could be a file extension, a common file name, a specific file path, or any combination
+  of these. When a directory with a defined file pattern is found, Butler will create a `workspace` for this directory.
+  A `workspace` is a directory that contains the relevant files for command execution.
 
-- Description: `filePatterns` is a required field for the user to supply file pattern strings associated with code files
-  for this language. Butler will use this to build workspaces. The file pattern could be a file extension, a common file
-  name, or a specific file path. Keep in mind that Butler will execute the commands you supply in the directories it
-  find these files.
+  The commands that get defined for a language will get executed in all `workspaces` that Butler finds for that
+  language. Keep this in mind when choosing which file pattern(s) to use. Using the example of Javascript below: a
+  `package.json` file will typically live in a parent directory of the actual code files it represents and will contain
+  the necessary scripts for building, testing, etc. If you attempt adding the `.js` extension to the list of file
+  patterns for Javascript, the commands you give to Butler will be executed in the directory where the `package.json`
+  is, AND the directory where the `.js` files are. For a case like this you would select just one of the patterns to
+  avoid executing commands in directories they weren't intended to be run in.
 
 - Examples:
+
+Example for Javascript:
+
+```yaml
+filePatterns:
+  - "package.json"
+```
 
 Example for C:
 
@@ -63,62 +75,34 @@ filePatterns:
   - ".h"
 ```
 
-Example for Javascript:
+### Language Task Commands
 
-```yaml
-FilePatterns:
-  - "package.json"
-```
-
-#### BuiltinStdLibsMethod
-
-- Type: bool
-
-- Default: false
-
-- Description: `BuiltinStdLibsMethod` is an option to define if you want to use Butler's built in methods for
-  determining standard library dependencies for a language.
-
-#### BuiltinWorkspaceDepMethod
-
-- Type: bool
-
-- Default: false
-
-- Description: `BuiltinWorkspaceDepMethod` is an option to define if you want to use Butler's built in methods for
-  determining the dependencies used for each workspace.
-
-#### BuiltinExternalDepMethod
-
-- Type: bool
-
-- Default: false
-
-- Description: `BuiltinExternalDepMethod` is an option to define if you want to use Butler's built in methods for
-  determining the external dependencies for the given language.
-
-### Task Command Options
-
-The following options relate to commands that Butler will execute for each stage of a languages build process. To define
-these options you must create a `taskCommands` tag in the language options like so:
+For Butler to run `tasks` for a language, appropriate shell commands should be provided for building, testing,
+linting, ect. To set any number of these commands, you must first create a `taskCommands` tag in the language options
+like so:
 
 ```yaml
 languages:
   - name: "golang"
-    ...options...
     taskCommands:
       lint: "example lint command"
       test: "example test command"
+    ...options...
   - name: "python"
     ...options...
 ```
+
+Each of the following fields can only be defined under the `taskCommands` tag. All of these commands are optional, but
+keep in mind that Butler won't do anything if it isn't provided with commands to execute.
 
 #### setUp
 
 - Type: string array
 
-- Description: `setUp` is a list of commands that would need to be executed before the execution of tasks or
-  gathering of dependencies for a language.
+- Description: `setUp` is a field where you can provide commands that will be executed once as a part of a global set up
+  before any `workspaces` are collected, dependencies are collected, or `tasks` executed for a language. You would add
+  commands here if you want something about the build server environment or the language to be altered before Butler
+  does anything related to that language.
 
 - Example
 
@@ -132,7 +116,7 @@ taskCommands:
 
 - Type: string
 
-- Description: `lint` is the field where you supply the command you wish to have executed during the linting
+- Description: `lint` is the field where you supply the shell command you wish to have executed during the linting
   stage for the given language.
 
 - Example:
@@ -146,7 +130,7 @@ taskCommands:
 
 - Type: string
 
-- Description: `test` is the field where you supply the command you wish to have executed during the testing
+- Description: `test` is the field where you supply the shell command you wish to have executed during the testing
   stage for the given language.
 
 - Example:
@@ -161,7 +145,7 @@ taskCommands:
 
 - Type: string
 
-- Description: `build` is the field where you supply the command you wish to have executed during the building
+- Description: `build` is the field where you supply the shell command you wish to have executed during the building
   stage for the given language.
 
 - Example:
@@ -177,7 +161,7 @@ taskCommands:
 
 - Type: string
 
-- Description: `publish` is the field where you supply the command you wish to have executed during the publishing
+- Description: `publish` is the field where you supply the shell command you wish to have executed during the publishing
   stage for the given language.
 
 - Example:
@@ -190,6 +174,87 @@ taskCommands:
   publish: "go publish"
 ```
 
+### Language Dependencies Overview
+
+This section relates to the gathering of dependencies for a language. This is completely optional, but the inclusion of
+dependency collection can lead to more efficient builds. The point of gathering language dependencies is that if certain
+dependencies are updated in a pull request, all code using that dependency will need to be built, tested, ect. If you
+choose not to supply methods for determining a language's dependencies, Butler cannot determine which code is or isn't
+using an updated dependency. As a result Butler will execute a full build every time it's run. This means all possible
+tasks will run, even on code that doesn't have a git diff. If Butler is aware of what dependencies have been changed, it
+can exclude certain code from the build process which will speed up build times in many cases.
+
+There are three types of dependencies Butler can track. The first are external dependencies which refers to any third
+party dependencies that are used by a language in the entire repository. This list of external dependencies will be added
+to a list of workspaces which have been marked as `dirty` for having a git diff. This is because those `workspaces`
+could be partially or fully exported as dependencies themselves. Therefore they should be treated in the same manner that
+updated third party dependencies are.
+
+The second type are called `workspace` dependencies. These are dependencies that are used by a particular `workspace`.
+If this feature is utilized, each `workspace` will be tracked by Butler with the list of what dependencies it's using.
+For Butler's language dependency feature to function properly, both of these dependency types must be tracked. The
+reason is that Butler will attempt to determine which of the external dependencies have been changed. A list of these
+changed dependencies will be compared against the dependencies being used in each `workspace` to determine if that
+`workspace` is `dirty` or not. A `dirty workspace` is a `workspace` that requires rebuild. If a `workspace` imports
+something from another workspace that has been marked as dirty, it too will be marked as dirty.
+
+The third type will be standard library dependencies for a language. You may give Butler the option to track these so
+that they can be identified and excluded. Standard library dependencies should typically be excluded because we can
+assume that any standard library imports are tied to the language version. If the language version has been changed in
+the pull request, this will automatically trigger a full Butler build. Otherwise the standard library imports can safely
+be excluded from the various `workspace` dependency lists and the external dependency list. If you wish to use Butler's
+dependency gathering feature, this is optional but recommended.
+
+### Dependency options
+
+The following options are settings related to dependency analysis in Butler. However, this is NOT where user supplied
+dependency parsing commands will be supplied. To define these options you must create a `dependencyOptions` tag in the
+language options like so:
+
+```yaml
+languages:
+  - name: "golang"
+    ...options...
+    taskCommands:
+      ...options...
+    dependencyOptions:
+      dependencyAnalysis: true
+      excludeStdLibs: true
+      externalDependencies: true
+  - name: "python"
+    ...options...
+```
+
+#### dependencyAnalysis
+
+- Type: bool
+
+- Default: false
+
+- Description: `dependencyAnalysis` is an option to set if you want to use Butler's built in methods for determining the
+  external dependencies for the given language.
+
+#### excludeStdLibs
+
+- Type: bool
+
+- Default: false
+
+- Description: `excludeStdLibs` is an option to set if you want to use Butler's built in methods for finding the
+  standard library dependencies for a language and removing them from a languages dependency list to improve
+  performance.
+
+#### externalDependencies
+
+- Type: bool
+
+- Default: false
+
+- Description: `externalDependencies` is an option to set if you want to use Butler's built in methods for finding a
+  languages third party dependencies. Butler will check if any of these dependencies have changed compared to the main
+  branch. A change would include a version change or the addition/removal of a dependency. Butler will mark each
+  workspace that used a changed dependency as dirty.
+
 ### Dependency Command options
 
 The following options relate to commands that Butler will execute to acquire the dependencies for a language. To define
@@ -200,6 +265,8 @@ languages:
   - name: "golang"
     ...options...
     taskCommands:
+      ...options...
+    dependencyOptions:
       ...options...
     dependencyCommands:
       external: "example command"
@@ -247,22 +314,9 @@ dependencyCommands:
   external: "example command"
 ```
 
-### Butler Ignore
+#### version
 
-The `.butler.ignore.yaml` file can be used to store the `allowedPaths` and `ignoredPaths`. To use this feature, add a
-file with the name `.butler.ignore.yaml` at the root of the repo. Then you may add the allowed/ignored paths with this
-same syntax as specified for the allowed/ignored paths in the base config above.
+- Type: string
 
-#### Butler Ignore Example
-
-```yaml
-allowedPaths:
-  - apps/butler
-  - interfaces
-  - lib/helpers
-
-ignoredPaths:
-  - node_modules
-  - apps/butler/test_data
-  - scripts
-```
+- Description: `version` is a command to return if a language version has changed or not. A change in language version
+  will automatically trigger a full Butler build.

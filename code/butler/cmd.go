@@ -60,15 +60,15 @@ func parseFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&ConfigPath, "cfg", ".butler.base.yaml", "Path to config file.")
 	cmd.PersistentFlags().StringVarP(&flags.Task.Coverage, "coverage", "c", "0",
 		"the percentage of code coverage that is acceptable for tests to pass.")
-	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldRunAll, "all", "a", false, "Runs all tasks regardless of diff.")
+	cmd.PersistentFlags().BoolVarP(&flags.Task.RunAll, "all", "a", false, "Runs all tasks regardless of diff.")
 
-	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldLint, "lint", "l", false, "Enables linting")
+	cmd.PersistentFlags().BoolVarP(&flags.Task.Lint, "lint", "l", false, "Enables linting")
 
-	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldTest, "test", "t", false, "Enables testing")
+	cmd.PersistentFlags().BoolVarP(&flags.Task.Test, "test", "t", false, "Enables testing")
 
-	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldBuild, "build", "b", false, "Enables building")
+	cmd.PersistentFlags().BoolVarP(&flags.Task.Build, "build", "b", false, "Enables building")
 
-	cmd.PersistentFlags().BoolVarP(&flags.Task.ShouldPublish, "publish", "p", false,
+	cmd.PersistentFlags().BoolVarP(&flags.Task.Publish, "publish", "p", false,
 		"Enables publishing.  Publishing also requires --publish-branch and --build-id.")
 
 	cmd.PersistentFlags().StringVar(&flags.PublishBranch, "publish-branch", envBranchName,

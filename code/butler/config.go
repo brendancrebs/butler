@@ -39,12 +39,12 @@ type ButlerPaths struct {
 }
 
 type TaskConfigurations struct {
-	Coverage      string `yaml:"coverage,omitempty"`
-	ShouldRunAll  bool   `yaml:"runAll,omitempty"`
-	ShouldLint    bool   `yaml:"lint,omitempty"`
-	ShouldTest    bool   `yaml:"test,omitempty"`
-	ShouldBuild   bool   `yaml:"build,omitempty"`
-	ShouldPublish bool   `yaml:"publish,omitempty"`
+	Coverage string `yaml:"coverage,omitempty"`
+	RunAll   bool   `yaml:"runAll,omitempty"`
+	Lint     bool   `yaml:"lint,omitempty"`
+	Test     bool   `yaml:"test,omitempty"`
+	Build    bool   `yaml:"build,omitempty"`
+	Publish  bool   `yaml:"publish,omitempty"`
 }
 
 // ButlerConfig specifies the Butler configuration options.
@@ -62,11 +62,11 @@ func (bc *ButlerConfig) applyFlagsToConfig(cmd *cobra.Command, flags *ButlerConf
 	bc.Paths.WorkspaceRoot = useFlagIfChanged(bc.Paths.WorkspaceRoot, flags.Paths.WorkspaceRoot,
 		cmd.Flags().Changed("workspace-root"))
 	bc.Task.Coverage = useFlagIfChanged(bc.Task.Coverage, flags.Task.Coverage, cmd.Flags().Changed("coverage"))
-	bc.Task.ShouldRunAll = useFlagIfChanged(bc.Task.ShouldRunAll, flags.Task.ShouldRunAll, cmd.Flags().Changed("all"))
-	bc.Task.ShouldBuild = useFlagIfChanged(bc.Task.ShouldBuild, flags.Task.ShouldBuild, cmd.Flags().Changed("build"))
-	bc.Task.ShouldLint = useFlagIfChanged(bc.Task.ShouldLint, flags.Task.ShouldLint, cmd.Flags().Changed("lint"))
-	bc.Task.ShouldTest = useFlagIfChanged(bc.Task.ShouldTest, flags.Task.ShouldTest, cmd.Flags().Changed("test"))
-	bc.Task.ShouldPublish = useFlagIfChanged(bc.Task.ShouldPublish, flags.Task.ShouldPublish,
+	bc.Task.RunAll = useFlagIfChanged(bc.Task.RunAll, flags.Task.RunAll, cmd.Flags().Changed("all"))
+	bc.Task.Build = useFlagIfChanged(bc.Task.Build, flags.Task.Build, cmd.Flags().Changed("build"))
+	bc.Task.Lint = useFlagIfChanged(bc.Task.Lint, flags.Task.Lint, cmd.Flags().Changed("lint"))
+	bc.Task.Test = useFlagIfChanged(bc.Task.Test, flags.Task.Test, cmd.Flags().Changed("test"))
+	bc.Task.Publish = useFlagIfChanged(bc.Task.Publish, flags.Task.Publish,
 		cmd.Flags().Changed("publish"))
 }
 
@@ -102,12 +102,12 @@ func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err er
 			ResultsFilePath: butlerResultsPath,
 		},
 		Task: &TaskConfigurations{
-			Coverage:      "0",
-			ShouldRunAll:  false,
-			ShouldLint:    false,
-			ShouldTest:    false,
-			ShouldBuild:   false,
-			ShouldPublish: envShouldPublish,
+			Coverage: "0",
+			RunAll:   false,
+			Lint:     false,
+			Test:     false,
+			Build:    false,
+			Publish:  envShouldPublish,
 		},
 	}
 

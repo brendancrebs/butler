@@ -20,11 +20,13 @@ languages:
   - name: "golang"
     filePatterns: 
       - ".go"
-    builtinStdLibsMethod: true
-    builtinWorkspaceDepMethod: true
-    builtinExternalDepMethod: false
+    dependencyOptions:
+      dependencyAnalysis: true
+      excludeStdLibs: true
+      externalDependencies: false
     dependencyCommands:
       external: "go run ./test_repo/user_commands/go_external_deps_method.go"
+      workspace: "echo workspace test"
     taskCommands: 
       lint: "echo go lint command"
       test: "echo go test command"

@@ -20,9 +20,10 @@ languages:
   - name: "golang"
     filePatterns: 
       - ".go"
-    builtinStdLibsMethod: false
-    builtinWorkspaceDepMethod: false
-    builtinExternalDepMethod: false
+    dependencyOptions:
+      dependencyAnalysis: false
+      excludeStdLibs: false
+      externalDependencies: false
     dependencyCommands:
       standardLibrary: "fail command"
       workspace: "fail command"

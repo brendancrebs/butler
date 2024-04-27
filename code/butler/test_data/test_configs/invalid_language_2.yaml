@@ -18,9 +18,10 @@ tasks:
 
 languages:
   - name: "invalid"
-    builtinStdLibsMethod: true
-    builtinWorkspaceDepMethod: false
-    builtinExternalDepMethod: true
+    dependencyOptions:
+      dependencyAnalysis: false
+      excludeStdLibs: true
+      externalDependencies: true
     dependencyCommands:
       external: "echo collect deps"
     taskCommands: 
