@@ -7,10 +7,7 @@ paths:
   workspaceRoot: "/workspaces/butler/code/butler/test_data/test_repo"
   resultsFilePath: "./butler_results.json"
   criticalPaths:
-    - .devcontainer/devcontainer.json
-    - .butler.base.yaml
     - .butler.ignore.yaml
-    - code
 
 tasks:
   runAll: false

@@ -38,8 +38,6 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 	if err != nil {
 		return
 	}
-	// fmt.Printf("\nAllPaths: %v\n", allPaths)
-	// fmt.Printf("\ndirtyFolders: %v\n", dirtyFolders)
 
 	for _, lang := range bc.Languages {
 		if err = lang.preliminaryCommands(cmd); err != nil {
@@ -53,13 +51,10 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 		}
 
 		lang.getWorkspaces(allPaths, bc.PublishBranch)
-		// for _, ws := range lang.Workspaces {
-		// 	fmt.Printf("\nws: %v\n", ws)
-		// }
 	}
 
 	for _, lang := range bc.Languages {
-		EvaluateDirtiness(lang.Workspaces, dirtyFolders)
+		EvaluateDirtiness(lang.Workspaces, dirtyFolders, bc.Paths.WorkspaceRoot)
 	}
 
 	populateTaskQueue(bc, taskQueue, cmd)
@@ -244,13 +239,13 @@ func getUniqueFolders(paths []string) []string {
 
 // Takes a language's workspaces and the set of dirty folders and determines which workspaces
 // require tasks.
-func EvaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
+func EvaluateDirtiness(workspaces []*Workspace, dirtyFolders []string, root string) {
 	dirtyWorkspaces := make(map[string]bool)
 	mapDFs := convertToStringBoolMap(dirtyFolders)
 
 	for _, ws := range workspaces {
 		for _, path := range dirtyFolders {
-			if !strings.Contains(path, strings.TrimPrefix(ws.Location, "./")) {
+			if !strings.Contains(path, strings.TrimPrefix(ws.Location, root)) {
 				continue
 			}
 			ws.IsDirty = true
