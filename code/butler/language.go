@@ -20,7 +20,7 @@ import (
 type Language struct {
 	Name           string              `yaml:"name,omitempty"`
 	TaskExec       *TaskCommands       `yaml:"taskCommands,omitempty"`
-	DepOptions     *DependencyOptions  `yaml:"dependencyOptions,omitempty"`
+	DepOptions     *DependencyOptions  `yaml:"builtinDependencyMethods,omitempty"`
 	DepCommands    *DependencyCommands `yaml:"dependencyCommands,omitempty"`
 	Workspaces     []*Workspace        `yaml:"workspaces,omitempty"`
 	StdLibDeps     []string            `yaml:"stdLibDeps,omitempty"`
@@ -59,11 +59,32 @@ func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	now := time.Now()
 	fmt.Fprintf(cmd.OutOrStdout(), "Enumerating repo. Creating build, lint, and test tasks...\n")
 
-	for _, step := range toBuildStep {
-		if step >= BuildStepLint && step <= BuildStepPublish {
-			for _, lang := range bc.Languages {
-				lang.createTasks(taskQueue, step, lang.TaskExec.Lint)
-			}
+	// for _, step := range toBuildStep {
+	// 	if step >= BuildStepLint && step <= BuildStepPublish {
+	// 		for _, lang := range bc.Languages {
+	// 			lang.createTasks(taskQueue, step, lang.TaskExec.Lint)
+	// 		}
+	// 	}
+	// }
+
+	for _, lang := range bc.Languages {
+		if bc.Task.Lint {
+			lang.createTasks(taskQueue, BuildStepLint, bc.Task.RunAll, lang.TaskExec.Lint)
+		}
+	}
+	for _, lang := range bc.Languages {
+		if bc.Task.Test {
+			lang.createTasks(taskQueue, BuildStepTest, bc.Task.RunAll, lang.TaskExec.Test)
+		}
+	}
+	for _, lang := range bc.Languages {
+		if bc.Task.Build {
+			lang.createTasks(taskQueue, BuildStepBuild, bc.Task.RunAll, lang.TaskExec.Build)
+		}
+	}
+	for _, lang := range bc.Languages {
+		if bc.Task.Publish {
+			lang.createTasks(taskQueue, BuildStepPublish, bc.Task.RunAll, lang.TaskExec.Publish)
 		}
 	}
 
@@ -134,7 +155,7 @@ func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 
 // Gathers all the standard library dependencies and external third party dependencies for a language
 // in the repository.
-func (lang *Language) getDependencies(bc *ButlerConfig) (err error) {
+func (lang *Language) getDependencies() (err error) {
 	if lang.DepOptions.ExcludeStdLibs {
 		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
 	} else if lang.DepCommands.StandardLibrary != "" {
@@ -155,9 +176,9 @@ func (lang *Language) getDependencies(bc *ButlerConfig) (err error) {
 
 // Creates a task object for each of a language's workspaces. Each new task will be pushed to the
 // task queue.
-func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, command string) {
+func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, runAll bool, command string) {
 	for _, ws := range lang.Workspaces {
-		if ws.IsDirty {
+		if ws.IsDirty || runAll {
 			command = strings.ReplaceAll(command, "%w", ws.Location)
 			createCmd := func() *exec.Cmd {
 				return &exec.Cmd{

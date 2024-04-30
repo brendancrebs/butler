@@ -35,7 +35,7 @@ func Test_createTasks(t *testing.T) {
 		}
 		testQueue := &Queue{}
 
-		inputLanguage.createTasks(testQueue, BuildStepTest, inputLanguage.TaskExec.Lint)
+		inputLanguage.createTasks(testQueue, BuildStepTest, false, inputLanguage.TaskExec.Lint)
 		So(inputLanguage.Workspaces, ShouldNotBeNil)
 	})
 }

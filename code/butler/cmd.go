@@ -91,10 +91,12 @@ func run(cmd *cobra.Command, args []string) (err error) {
 
 	fmt.Fprintln(cmd.OutOrStdout(), config)
 
-	_, err = getTasks(config, cmd)
+	tasks, err := getTasks(config, cmd)
 	if err != nil {
 		return
 	}
+
+	err = RunTasksInParallel(tasks, cmd.OutOrStdout())
 
 	return
 }

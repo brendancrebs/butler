@@ -38,19 +38,24 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 	if err != nil {
 		return
 	}
+	// fmt.Printf("\nAllPaths: %v\n", allPaths)
+	// fmt.Printf("\ndirtyFolders: %v\n", dirtyFolders)
 
 	for _, lang := range bc.Languages {
 		if err = lang.preliminaryCommands(cmd); err != nil {
 			return
 		}
 		if bc.PublishBranch != "" {
-			if err = lang.getDependencies(bc); err != nil {
+			if err = lang.getDependencies(); err != nil {
 				return
 			}
 			dirtyFolders = append(dirtyFolders, lang.ExternalDeps...)
 		}
 
 		lang.getWorkspaces(allPaths, bc.PublishBranch)
+		// for _, ws := range lang.Workspaces {
+		// 	fmt.Printf("\nws: %v\n", ws)
+		// }
 	}
 
 	for _, lang := range bc.Languages {
