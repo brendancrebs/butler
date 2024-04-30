@@ -53,6 +53,7 @@ type ButlerConfig struct {
 	Paths         *ButlerPaths        `yaml:"paths,omitempty"`
 	Task          *TaskConfigurations `yaml:"tasks,omitempty"`
 	Languages     []*Language         `yaml:"languages,omitempty"`
+	Subscribers   []string            `yaml:"resultSubscribers,omitempty"`
 }
 
 // updates the config settings with values passed using the cli.
