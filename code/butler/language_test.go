@@ -35,7 +35,7 @@ func Test_createTasks(t *testing.T) {
 		}
 		testQueue := &Queue{}
 
-		inputLanguage.createTasks(testQueue, BuildStepTest, false, inputLanguage.TaskExec.Lint)
+		inputLanguage.createTasks(testQueue, BuildStepTest, inputLanguage.TaskExec.Lint, false)
 		So(inputLanguage.Workspaces, ShouldNotBeNil)
 	})
 }
@@ -56,7 +56,7 @@ func Test_preliminaryCommands(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		err := langs[0].preliminaryCommands(cmd)
+		err := langs[0].runCommandList(cmd, langs[0].TaskExec.SetUp)
 
 		w.Close()
 		out, _ := io.ReadAll(r)
@@ -79,7 +79,7 @@ func Test_preliminaryCommands(t *testing.T) {
 			return nil, nil
 		}
 
-		err := langs[0].preliminaryCommands(cmd)
+		err := langs[0].runCommandList(cmd, langs[0].TaskExec.SetUp)
 		So(err.Error(), ShouldContainSubstring, "error executing 'fail command'\nerror: test command failed\noutput:")
 	})
 }

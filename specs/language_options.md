@@ -8,8 +8,8 @@ SEL Confidential
 ## Introduction
 
 For Butler to execute `tasks` for a language in your repository, you must first supply information about that language to
-the config. You will supply each language for Butler to recognize as a list under the label of `languages`. An example is
-shown below:
+the config. You will supply each language in your repo as a list under the label of `languages`. An example `languages`
+tag is shown below:
 
 ```yaml
 languages:
@@ -22,6 +22,8 @@ languages:
 ```
 
 ## Specification
+
+The options described by this spec document will be defined on a per language basis.
 
 ### Mandatory Language options
 
@@ -110,6 +112,21 @@ keep in mind that Butler won't do anything if it isn't provided with commands to
 taskCommands:
   setUp:
     - "example preliminary command"
+```
+
+#### cleanUp
+
+- Type: string array
+
+- Description: `cleanUp` is similar to `setUp`. The difference is that these commands will be executed after tasks have
+  finished. These commands will run regardless of whether the build succeeded or failed.
+
+- Example
+
+```yaml
+taskCommands:
+  cleanUp:
+    - "example teardown command"
 ```
 
 #### lint

@@ -40,21 +40,23 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 	}
 
 	for _, lang := range bc.Languages {
-		if err = lang.preliminaryCommands(cmd); err != nil {
+		if err = lang.runCommandList(cmd, lang.TaskExec.SetUp); err != nil {
 			return
 		}
-		if bc.PublishBranch != "" {
-			if err = lang.getDependencies(); err != nil {
+		if !bc.Task.RunAll {
+			if err = lang.getDependencies(bc); err != nil {
 				return
 			}
 			dirtyFolders = append(dirtyFolders, lang.ExternalDeps...)
 		}
 
-		lang.getWorkspaces(allPaths, bc.PublishBranch)
+		lang.getWorkspaces(bc, allPaths)
 	}
 
-	for _, lang := range bc.Languages {
-		EvaluateDirtiness(lang.Workspaces, dirtyFolders, bc.Paths.WorkspaceRoot)
+	if !bc.Task.RunAll {
+		for _, lang := range bc.Languages {
+			EvaluateDirtiness(lang.Workspaces, dirtyFolders)
+		}
 	}
 
 	populateTaskQueue(bc, taskQueue, cmd)
@@ -67,7 +69,6 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 // determine if a critical file has been changed.
 func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, err error) {
 	allPaths = getFilePaths([]string{bc.Paths.WorkspaceRoot}, bc.Paths.AllowedPaths, bc.Paths.IgnorePaths, true)
-
 	if bc.PublishBranch != "" && !bc.Task.RunAll {
 		allDirtyPaths, err := getDirtyPaths(bc.PublishBranch)
 		if err != nil {
@@ -95,7 +96,7 @@ func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 	}
 
 	bc.Task.RunAll = strings.EqualFold(GetEnvOrDefault(envRunAll, ""), "true") || currentBranch == bc.PublishBranch
-	bc.Task.Publish = currentBranch == bc.PublishBranch
+	bc.Task.Publish = strings.EqualFold(GetEnvOrDefault(envPublish, ""), "true") || currentBranch == bc.PublishBranch
 	bc.Task.RunAll = bc.Task.RunAll || CriticalPathChanged(allDirtyPaths, bc.Paths.CriticalPaths)
 
 	for _, lang := range bc.Languages {
@@ -154,13 +155,16 @@ func recurseFilepaths(paths, allowed, ignored []string, path string, shouldRecur
 // also hasn't been blocked.
 func isAllowed(path string, allowed, ignored []string) bool {
 	isAllowed := false
-	for _, key := range allowed {
-		if strings.Contains(path, key) {
-			isAllowed = true
-			break
+	if len(allowed) == 0 {
+		isAllowed = true
+	} else {
+		for _, key := range allowed {
+			if strings.Contains(path, key) {
+				isAllowed = true
+				break
+			}
 		}
 	}
-
 	if !isAllowed {
 		return false
 	}
@@ -239,13 +243,13 @@ func getUniqueFolders(paths []string) []string {
 
 // Takes a language's workspaces and the set of dirty folders and determines which workspaces
 // require tasks.
-func EvaluateDirtiness(workspaces []*Workspace, dirtyFolders []string, root string) {
+func EvaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
 	dirtyWorkspaces := make(map[string]bool)
 	mapDFs := convertToStringBoolMap(dirtyFolders)
 
 	for _, ws := range workspaces {
 		for _, path := range dirtyFolders {
-			if !strings.Contains(path, strings.TrimPrefix(ws.Location, root)) {
+			if !strings.Contains(path, strings.TrimPrefix(ws.Location, "./")) {
 				continue
 			}
 			ws.IsDirty = true

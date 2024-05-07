@@ -1,7 +1,7 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
 
-publishBranch: "main"
+publishBranch: "butler_unit_test_main"
 
 paths:
   workspaceRoot: "./test_data"
@@ -23,7 +23,7 @@ languages:
     filePatterns:
       - "invalid.bad"
     dependencyOptions:
-      dependencyAnalysis: false
+      dependencyAnalysis: true
       excludeStdLibs: false
       externalDependencies: true
     dependencyCommands:

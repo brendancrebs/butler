@@ -20,7 +20,7 @@ import (
 type Language struct {
 	Name           string              `yaml:"name,omitempty"`
 	TaskExec       *TaskCommands       `yaml:"taskCommands,omitempty"`
-	DepOptions     *DependencyOptions  `yaml:"builtinDependencyMethods,omitempty"`
+	DepOptions     *DependencyOptions  `yaml:"dependencyOptions,omitempty"`
 	DepCommands    *DependencyCommands `yaml:"dependencyCommands,omitempty"`
 	Workspaces     []*Workspace        `yaml:"workspaces,omitempty"`
 	StdLibDeps     []string            `yaml:"stdLibDeps,omitempty"`
@@ -33,6 +33,7 @@ type Language struct {
 // tasks for a language.
 type TaskCommands struct {
 	SetUp   []string `yaml:"setUp,omitempty"`
+	CleanUp []string `yaml:"cleanUp,omitempty"`
 	Lint    string   `yaml:"lint,omitempty"`
 	Test    string   `yaml:"test,omitempty"`
 	Build   string   `yaml:"build,omitempty"`
@@ -43,7 +44,7 @@ type TaskCommands struct {
 type DependencyOptions struct {
 	DependencyAnalysis bool `yaml:"dependencyAnalysis,omitempty"`
 	ExcludeStdLibs     bool `yaml:"excludeStdLibs,omitempty"`
-	ExternalDeps       bool `yaml:"externalDependencies"`
+	ExternalDeps       bool `yaml:"externalDependencies,omitempty"`
 }
 
 // DependencyCommands specifies dependency gathering commands for an individual language.
@@ -59,32 +60,14 @@ func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	now := time.Now()
 	fmt.Fprintf(cmd.OutOrStdout(), "Enumerating repo. Creating build, lint, and test tasks...\n")
 
-	// for _, step := range toBuildStep {
-	// 	if step >= BuildStepLint && step <= BuildStepPublish {
-	// 		for _, lang := range bc.Languages {
-	// 			lang.createTasks(taskQueue, step, lang.TaskExec.Lint)
-	// 		}
-	// 	}
-	// }
-
-	for _, lang := range bc.Languages {
-		if bc.Task.Lint {
-			lang.createTasks(taskQueue, BuildStepLint, bc.Task.RunAll, lang.TaskExec.Lint)
-		}
-	}
-	for _, lang := range bc.Languages {
-		if bc.Task.Test {
-			lang.createTasks(taskQueue, BuildStepTest, bc.Task.RunAll, lang.TaskExec.Test)
-		}
-	}
-	for _, lang := range bc.Languages {
-		if bc.Task.Build {
-			lang.createTasks(taskQueue, BuildStepBuild, bc.Task.RunAll, lang.TaskExec.Build)
-		}
-	}
-	for _, lang := range bc.Languages {
-		if bc.Task.Publish {
-			lang.createTasks(taskQueue, BuildStepPublish, bc.Task.RunAll, lang.TaskExec.Publish)
+	for i := 1; i < len(buildSteps); i++ {
+		for _, lang := range bc.Languages {
+			buildCommands := getBuildCommands(lang)
+			command := buildCommands[buildSteps[i]]
+			if command == "" {
+				continue
+			}
+			lang.createTasks(taskQueue, buildSteps[i], command, bc.Task.RunAll)
 		}
 	}
 
@@ -92,8 +75,8 @@ func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 }
 
 // Executes commands that must be run before the creation of tasks
-func (lang *Language) preliminaryCommands(cmd *cobra.Command) (err error) {
-	for _, command := range lang.TaskExec.SetUp {
+func (lang *Language) runCommandList(cmd *cobra.Command, commands []string) (err error) {
+	for _, command := range commands {
 		fmt.Fprintf(cmd.OutOrStdout(), "\nexecuting: %s...  ", command)
 
 		commandParts := splitCommand(command)
@@ -155,7 +138,7 @@ func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 
 // Gathers all the standard library dependencies and external third party dependencies for a language
 // in the repository.
-func (lang *Language) getDependencies() (err error) {
+func (lang *Language) getDependencies(bc *ButlerConfig) (err error) {
 	if lang.DepOptions.ExcludeStdLibs {
 		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
 	} else if lang.DepCommands.StandardLibrary != "" {
@@ -176,7 +159,7 @@ func (lang *Language) getDependencies() (err error) {
 
 // Creates a task object for each of a language's workspaces. Each new task will be pushed to the
 // task queue.
-func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, runAll bool, command string) {
+func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, command string, runAll bool) {
 	for _, ws := range lang.Workspaces {
 		if ws.IsDirty || runAll {
 			command = strings.ReplaceAll(command, "%w", ws.Location)
@@ -199,6 +182,12 @@ func (lang *Language) validateLanguage() error {
 	if len(lang.FilePatterns) < 1 {
 		return fmt.Errorf("no file patterns supplied for '%s'. Please see the 'FilePatterns' options in the config spec for more information", lang.Name)
 	}
+
+	lang.validateDependencySettings()
+	return nil
+}
+
+func (lang *Language) validateDependencySettings() {
 	if lang.DepCommands == nil {
 		lang.DepCommands = &DependencyCommands{
 			StandardLibrary: "",
@@ -206,5 +195,20 @@ func (lang *Language) validateLanguage() error {
 			External:        "",
 		}
 	}
-	return nil
+
+	if lang.DepOptions == nil {
+		lang.DepOptions = &DependencyOptions{
+			DependencyAnalysis: false,
+			ExcludeStdLibs:     false,
+			ExternalDeps:       false,
+		}
+	}
+
+	if !lang.DepOptions.DependencyAnalysis {
+		lang.DepOptions.ExcludeStdLibs = false
+		lang.DepOptions.ExternalDeps = false
+		lang.DepCommands.StandardLibrary = ""
+		lang.DepCommands.Workspace = ""
+		lang.DepCommands.External = ""
+	}
 }

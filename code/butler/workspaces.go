@@ -20,7 +20,7 @@ type Workspace struct {
 }
 
 // Collects workspaces for a language
-func (lang *Language) getWorkspaces(paths []string, publishBranch string) {
+func (lang *Language) getWorkspaces(bc *ButlerConfig, paths []string) {
 	allDirs := make(map[string]bool)
 	for _, pattern := range lang.FilePatterns {
 		for k, v := range getMatchingDirs(paths, pattern) {
@@ -28,7 +28,7 @@ func (lang *Language) getWorkspaces(paths []string, publishBranch string) {
 		}
 	}
 
-	lang.concurrentGetWorkspaces(allDirs, publishBranch)
+	lang.concurrentGetWorkspaces(bc, allDirs)
 }
 
 // getMatchingDirs returns the map of directories that contain `pattern`.
@@ -45,7 +45,7 @@ func getMatchingDirs(dirs []string, pattern string) (matches map[string]bool) {
 
 // Returns the full set of workspaces. Brute force multithreading, spins out the requests and lets
 // the go runtime handle the workload.
-func (lang *Language) concurrentGetWorkspaces(allDirs map[string]bool, publishBranch string) {
+func (lang *Language) concurrentGetWorkspaces(bc *ButlerConfig, allDirs map[string]bool) {
 	var (
 		mu sync.Mutex
 		wg sync.WaitGroup
@@ -56,10 +56,12 @@ func (lang *Language) concurrentGetWorkspaces(allDirs map[string]bool, publishBr
 		// must proxy dir into a different variable to make it safe to use inside the closure.
 		go func(thisDir string) {
 			workspace := &Workspace{Location: thisDir}
-			if lang.DepCommands.Workspace != "" && publishBranch != "" {
+			if lang.DepCommands.Workspace != "" && !bc.Task.RunAll {
 				deps := builtin.GetWorkspaceDeps(lang.Name, thisDir)
-				prunedDeps := difference(deps, lang.StdLibDeps)
+				prunedDeps := Difference(deps, lang.StdLibDeps)
 				workspace.Dependencies = prunedDeps
+			} else {
+				bc.Task.RunAll = true
 			}
 
 			mu.Lock()
@@ -71,8 +73,8 @@ func (lang *Language) concurrentGetWorkspaces(allDirs map[string]bool, publishBr
 	wg.Wait()
 }
 
-// difference returns the elements in `a` that aren't in `b`.
-func difference(a, b []string) []string {
+// Difference returns the elements in `a` that aren't in `b`.
+func Difference(a, b []string) []string {
 	mb := make(map[string]struct{}, len(b))
 	for _, x := range b {
 		mb[x] = struct{}{}

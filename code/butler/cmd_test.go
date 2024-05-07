@@ -269,15 +269,33 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/bad_command.yaml"})
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/bad_setup_command.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
-			if reflect.DeepEqual(cmd.Args, []string{"fail", "command"}) {
-				return nil, errors.New("test command failed")
+			if reflect.DeepEqual(cmd.Args, []string{"fail", "setup"}) {
+				return nil, errors.New("setup command failed")
 			}
 			return nil, nil
 		}
 		Execute()
-		So(stderr.String(), ShouldContainSubstring, "test command failed")
+		So(stderr.String(), ShouldContainSubstring, "setup command failed")
+	})
+
+	Convey("Butler cleanup fails when teardown command fails", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/bad_cleanup_command.yaml"})
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			if reflect.DeepEqual(cmd.Args, []string{"fail", "cleanup"}) {
+				return nil, errors.New("cleanup command failed")
+			}
+			return nil, nil
+		}
+		Execute()
+		So(stderr.String(), ShouldContainSubstring, "cleanup command failed")
 	})
 
 	Convey("Butler failed when unsupported language supplied", t, func() {
@@ -287,7 +305,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/unknown_lang.yaml"})
+		cmd.SetArgs([]string{"--cfg", "./test_data/test_configs/unknown_lang.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			return nil, nil
 		}
@@ -303,7 +321,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/user_command_fail.yaml"})
+		cmd.SetArgs([]string{"--cfg", "./test_data/test_configs/user_command_fail.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
 				gitDiffReturn, _ := json.Marshal([]string{"testPath1", "testPath2"})
@@ -379,8 +397,29 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/workspace_deps.yaml"})
+		cmd.SetArgs([]string{"--cfg", "./test_data/test_configs/workspace_deps.yaml"})
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "diff", "--name-only", currBranch}) {
+				gitDiffReturn, _ := json.Marshal([]string{"../test_data/test_repo/go_test/example.go"})
+				return gitDiffReturn, nil
+			}
+			return nil, nil
+		}
+		Execute()
 
+		_, err := os.Stat(butlerResultsPath)
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldContainSubstring, "")
+	})
+
+	Convey("Butler runs without allowed paths", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--publish-branch", currBranch, "--cfg", "./test_data/test_configs/no_allowed_paths.yaml"})
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)

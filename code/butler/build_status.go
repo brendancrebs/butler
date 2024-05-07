@@ -64,10 +64,23 @@ func (step *BuildStep) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// maps the build steps to the build commands for a language.
+func getBuildCommands(lang *Language) map[BuildStep]string {
+	return map[BuildStep]string{
+		BuildStepUnknown: "",
+		BuildStepLint:    lang.TaskExec.Lint,
+		BuildStepTest:    lang.TaskExec.Test,
+		BuildStepBuild:   lang.TaskExec.Build,
+		BuildStepPublish: lang.TaskExec.Publish,
+	}
+}
+
+var buildSteps = []BuildStep{BuildStepUnknown, BuildStepLint, BuildStepTest, BuildStepBuild, BuildStepPublish}
+
 var toBuildStep = map[string]BuildStep{
-	"Unknown": BuildStepUnknown,
-	"Lint":    BuildStepLint,
-	"Test":    BuildStepTest,
-	"Build":   BuildStepBuild,
-	"Publish": BuildStepPublish,
+	BuildStepUnknown.String(): BuildStepUnknown,
+	BuildStepLint.String():    BuildStepLint,
+	BuildStepTest.String():    BuildStepTest,
+	BuildStepBuild.String():   BuildStepBuild,
+	BuildStepPublish.String(): BuildStepPublish,
 }

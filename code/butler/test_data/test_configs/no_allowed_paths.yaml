@@ -5,8 +5,6 @@ publishBranch: "butler_unit_test_main"
 
 paths:
   workspaceRoot: "./test_data"
-  allowedPaths:
-    - test_repo
 
   ignorePaths:
     - blocked_dir
@@ -22,12 +20,6 @@ languages:
   - name: "golang"
     filePatterns: 
       - ".go"
-    dependencyOptions:
-      dependencyAnalysis: false
-      excludeStdLibs: true
-      externalDependencies: false
-    dependencyCommands:
-      external: "go run ./test_repo/user_commands/go_external_deps_method.go"
     taskCommands: 
       lint: "echo go lint command"
       test: "echo go test command"

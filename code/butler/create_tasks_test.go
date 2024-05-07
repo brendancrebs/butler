@@ -66,7 +66,7 @@ func Test_evaluate_dirtiness(t *testing.T) {
 		expected[0].IsDirty = true
 		expected[3].IsDirty = true
 		dirtyPaths := []string{"root/workspace1", "root/workspace4"}
-		butler.EvaluateDirtiness(testWorkspaces, dirtyPaths, "root")
+		butler.EvaluateDirtiness(testWorkspaces, dirtyPaths)
 		So(testWorkspaces, ShouldResemble, expected)
 	})
 }

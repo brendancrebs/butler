@@ -33,19 +33,18 @@ func Test_loadConfig(t *testing.T) {
 				External: "go run ./test_repo/user_commands/go_external_deps_method.go",
 			},
 			TaskExec: &butler.TaskCommands{
-				Lint:    "echo go lint command",
-				Test:    "echo go test command",
-				Build:   "echo go build command",
-				Publish: "echo go publish command",
-				SetUp:   []string{"echo go test"},
+				Lint:  "echo go lint command",
+				Test:  "echo go test command",
+				Build: "echo go build command",
+				SetUp: []string{"echo go test"},
 			},
 		}
 
 		config := &butler.ButlerConfig{}
 		expected := &butler.ButlerConfig{
-			PublishBranch: "main",
+			PublishBranch: "butler_unit_test_main",
 			Paths: &butler.ButlerPaths{
-				AllowedPaths:    []string{"good_path", "test_repo"},
+				AllowedPaths:    []string{"test_repo"},
 				IgnorePaths:     []string{"bad_path", "blocked_dir"},
 				WorkspaceRoot:   expectedRoot,
 				ResultsFilePath: "./butler_results.json",
@@ -177,7 +176,6 @@ func Test_loadButlerIgnore(t *testing.T) {
 		butler.ConfigPath = "./test_configs/.butler.base.yaml"
 		expected := &butler.ButlerConfig{
 			Paths: &butler.ButlerPaths{
-				AllowedPaths:  []string{"good_path"},
 				IgnorePaths:   []string{"bad_path", "blocked_dir"},
 				WorkspaceRoot: ".",
 			},

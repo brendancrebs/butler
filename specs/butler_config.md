@@ -131,7 +131,15 @@ resultsFilePath: "./butler_results.json"
 
 - Default: false
 
-- Description: `runAll` enabled a full build. This means all tasks should be run regardless of the git diff.
+- Description: `runAll` enabled a full build. This means all tasks should be run regardless of the git diff. A full
+  build will also be triggered if any of the following conditions are met:
+  1. The a `publishBranch` variable is not set. This can be set through the `publishBranch` config option or the
+     `--publish-branch` cli flag.
+  2. The environment variable `BUTLER_SHOULD_RUN_ALL` is set to true.
+  3. The git branch Butler runs on is the `publish branch`.
+  4. A `critical path` has been changed.
+  5. `Dependency analysis` is disabled.
+  6. The version of a language has been changed.
 
 #### lint
 

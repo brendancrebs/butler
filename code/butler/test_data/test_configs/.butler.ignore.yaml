@@ -1,9 +1,6 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
 
-allowedPaths:
-  - good_path
-
 ignorePaths:
   - bad_path
   - blocked_dir

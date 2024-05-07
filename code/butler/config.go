@@ -24,10 +24,7 @@ const (
 	defaultCoverage   = "0"
 )
 
-var (
-	envShouldPublish, _ = strconv.ParseBool(GetEnvOrDefault(envPublish, "false"))
-	envBranchName       = strings.TrimSpace(GetEnvOrDefault(envBranch, ""))
-)
+var envBranchName = strings.TrimSpace(GetEnvOrDefault(envBranch, ""))
 
 // ButlerPaths specifies the allowed and ignored paths within the .butler.ignore.yaml.
 type ButlerPaths struct {
@@ -53,7 +50,6 @@ type ButlerConfig struct {
 	Paths         *ButlerPaths        `yaml:"paths,omitempty"`
 	Task          *TaskConfigurations `yaml:"tasks,omitempty"`
 	Languages     []*Language         `yaml:"languages,omitempty"`
-	Subscribers   []string            `yaml:"resultSubscribers,omitempty"`
 }
 
 // updates the config settings with values passed using the cli.
@@ -108,7 +104,7 @@ func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err er
 			Lint:     false,
 			Test:     false,
 			Build:    false,
-			Publish:  envShouldPublish,
+			Publish:  false,
 		},
 	}
 

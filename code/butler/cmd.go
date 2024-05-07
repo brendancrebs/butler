@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 
 	"github.com/spf13/cobra"
@@ -78,10 +79,7 @@ func parseFlags(cmd *cobra.Command) {
 }
 
 func run(cmd *cobra.Command, args []string) (err error) {
-	si, err := printSystemInfo(cmd)
-	if err != nil {
-		return
-	}
+	// var taskQueue *Queue
 
 	config := &ButlerConfig{}
 	if err = config.Load(ConfigPath); err != nil {
@@ -89,54 +87,28 @@ func run(cmd *cobra.Command, args []string) (err error) {
 	}
 	config.applyFlagsToConfig(cmd, flags)
 
+	defer publishResults(config)
+
 	fmt.Fprintln(cmd.OutOrStdout(), config)
 
-	tasks, err := getTasks(config, cmd)
-	if err != nil {
-		return
-	}
-	publishTasks := tasks.tasks
-
-	defer publishResults(cmd, &si, publishTasks, &err, config.Paths.ResultsFilePath, config.Subscribers)
-
-	err = RunTasksInParallel(tasks, cmd.OutOrStdout())
-
-	return
-}
-
-func publishResults(
-	cmd *cobra.Command,
-	si *SystemInfo,
-	tasks []*Task,
-	err *error,
-	resultsFilePath string,
-	subscribers []string,
-) {
-	// status := 0
-	// if *err != nil {
-	// 	status = 1
-	// 	*err = nil
-	// }
-
-	fmt.Fprintf(cmd.OutOrStdout(), "Generating results...\n")
-
-	if resultsErr := PublishResults(cmd, resultsFilePath, subscribers, si, tasks, *err); resultsErr != nil {
-		fmt.Fprintf(cmd.ErrOrStderr(), "Failed -- %s%s", resultsErr, "\n")
-	}
-}
-
-// Prints system information before task creation
-func printSystemInfo(cmd *cobra.Command) (si SystemInfo, err error) {
-	fmt.Fprintf(cmd.OutOrStdout(), "System Info:\n")
-	si, err = GetSystemInfo()
+	_, err = getTasks(config, cmd)
 	if err != nil {
 		return
 	}
 
-	systemPretty, err := json.MarshalIndent(si, "", "\t")
+	// **PLACE-HOLDER FOR TASK EXECUTION**
 
-	fmt.Fprintf(cmd.OutOrStdout(), "<<<json\n")
-	fmt.Fprintf(cmd.OutOrStdout(), "%s\n", string(systemPretty))
-	fmt.Fprintf(cmd.OutOrStdout(), ">>>\n\n")
+	for _, lang := range config.Languages {
+		if err = lang.runCommandList(cmd, lang.TaskExec.CleanUp); err != nil {
+			return
+		}
+	}
+
 	return
+}
+
+// For now this just prints the config to Butler results since no tasks are being created.
+func publishResults(bc *ButlerConfig) {
+	resultBytes, _ := json.MarshalIndent(bc, "", "\t")
+	_ = os.WriteFile(bc.Paths.ResultsFilePath, resultBytes, 0o600)
 }

@@ -4,10 +4,13 @@
 publishBranch: "main"
 
 paths:
-  workspaceRoot: "/workspaces/butler/code/butler/test_data/test_repo"
+  workspaceRoot: "/workspaces/butler"
   resultsFilePath: "./butler_results.json"
   criticalPaths:
+    - .devcontainer/devcontainer.json
+    - .butler.base.yaml
     - .butler.ignore.yaml
+    - code
 
 tasks:
   runAll: false
@@ -20,12 +23,12 @@ languages:
   - name: "golang"
     filePatterns: 
       - ".go"
-    builtinDependencyMethods:
-      dependencyAnalysis: true
-      excludeStdLibs: true
-      externalDependencies: true
+    dependencyOptions:
+      dependencyAnalysis: false
+      excludeStdLibs: false
+      externalDependencies: false
     taskCommands: 
       lint: "/go/bin/golangci-lint run --timeout 5m --allow-parallel-runners --concurrency=1 ."
-      test: "go run /workspaces/butler/ci/go_testing_command/go_testing_command.go"
+      test: "go run /workspaces/butler/user_commands/go_testing_command/go_testing_command.go"
       setUp:
           - "echo go test"
