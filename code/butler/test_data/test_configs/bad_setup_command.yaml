@@ -1,7 +1,7 @@
 # Copyright (c) 2023 - 2024 Schweitzer Engineering Laboratories, Inc.
 # SEL Confidential
 
-publishBranch: "main"
+publishBranch: "butler_unit_test_main"
 
 paths:
   workspaceRoot: "./test_data"
@@ -34,4 +34,4 @@ languages:
       build: "echo go build command"
       publish: "echo go publish command"
       setUp:
-          - "fail command"
+          - "fail setup"
