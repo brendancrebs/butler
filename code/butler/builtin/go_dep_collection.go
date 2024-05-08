@@ -16,35 +16,44 @@ import (
 )
 
 const (
+	gitName  = "git"
 	goName   = "go"
 	golangId = "golang"
 	goMod    = "go.mod"
 )
 
-// goGetStdLibs returns the list of go std libs for the current go executable.
-func goGetStdLibs() ([]string, error) {
-	goPath, _ := exec.LookPath(goName)
-	cmd := exec.Command(goPath, "list", "std")
+// Returns the list of standard libraries for the current go executable. The libraries will be
+// returned as a list of strings. The first string will be "true" or "false" to indicate whether the
+// go version has been changed compared to the main branch.
+func getStdLibs() (results []string, err error) {
+	cmd := exec.Command(goName, "list", "std")
+	output, err := execOutputStub(cmd)
+	if err != nil {
+		return
+	}
 
-	output, err := cmd.Output()
 	s := bufio.NewScanner(bytes.NewBuffer(output))
-	var results []string
+
 	for s.Scan() {
 		results = append(results, s.Text())
 	}
-	changeSet, _ := goGetChangedModFileDeps(os.Getenv(envBranch))
-	versionChanged, err := didVersionChange(changeSet), err
+	changeSet, err := getChangedModFileDeps(os.Getenv(envBranch))
+	if err != nil {
+		return
+	}
+	versionChanged := didVersionChange(changeSet)
 	results = append([]string{strconv.FormatBool(versionChanged)}, results...)
-	return results, err
+	return
 }
 
-// goGetPkgDeps returns the list of go package dependencies for a given package.
-// It returns nothing if the folder is not or does not contains any go files.
-func goGetPkgDeps(directory string) (results []string) {
-	goPath, _ := exec.LookPath(goName)
-	cmd := exec.Command(goPath, "list", "-test", "-f", `{{join .Deps "\n"}}`, directory)
-
-	output, _ := cmd.Output()
+// Returns the list of go package dependencies for a given package. It returns nothing if the folder
+// is not or does not contains any go files.
+func getWorkspaceDeps(directory string) (results []string, err error) {
+	cmd := exec.Command(goName, "list", "-test", "-f", `{{join .Deps "\n"}}`, directory)
+	output, err := execOutputStub(cmd)
+	if err != nil {
+		return
+	}
 	s := bufio.NewScanner(bytes.NewBuffer(output))
 
 	for s.Scan() {
@@ -54,8 +63,8 @@ func goGetPkgDeps(directory string) (results []string) {
 	return
 }
 
-// goGetModFileDiff returns the list of changed dependencies listed in the mod file.
-func goGetChangedModFileDeps(branch string) (changeSet []string, err error) {
+// Returns the list of changed dependencies listed in the mod file.
+func getChangedModFileDeps(branch string) (changeSet []string, err error) {
 	err = filepath.WalkDir(os.Getenv(envWorkspaceRoot), func(path string, d fs.DirEntry, walkErr error) error {
 		if d.IsDir() {
 			return nil
@@ -73,23 +82,15 @@ func goGetChangedModFileDeps(branch string) (changeSet []string, err error) {
 func singleFileDiff(filename, branch string) (changes []string, err error) {
 	filename = strings.TrimSpace(filename)
 	branch = strings.TrimSpace(branch)
-	var path string
 
-	path, err = exec.LookPath("git")
-	if err != nil {
-		return
-	}
-	cmd := &exec.Cmd{
-		Path: path,
-		Args: []string{path, "diff"},
-	}
+	cmd := exec.Command(gitName, "diff")
 	if branch != "" {
 		cmd.Args = append(cmd.Args, branch)
 	}
 	cmd.Args = append(cmd.Args, []string{"--", filename}...)
 
 	var b []byte
-	if b, err = cmd.Output(); err == nil {
+	if b, err = execOutputStub(cmd); err == nil {
 		changes = pruneAdditiveChanges(convertLinesToStrings(b, []byte{'\n'}))
 	}
 

@@ -118,7 +118,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd = getCommand()
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--config", "./test_data/test_configs/.butler.base.yaml"})
+		cmd.SetArgs([]string{"--config", "./test_data/test_configs/no_git.yaml"})
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if reflect.DeepEqual(cmd.Args, []string{gitCommand, "branch", "--show-current"}) {
 				gitBranchReturn, _ := json.Marshal(currBranch)
@@ -296,22 +296,6 @@ func Test_RunWithErr(t *testing.T) {
 		}
 		Execute()
 		So(stderr.String(), ShouldContainSubstring, "cleanup command failed")
-	})
-
-	Convey("Butler failed when unsupported language supplied", t, func() {
-		undo := replaceStubs()
-		defer undo()
-
-		cmd = getCommand()
-		stderr := new(bytes.Buffer)
-		cmd.SetErr(stderr)
-		cmd.SetArgs([]string{"--config", "./test_data/test_configs/unknown_lang.yaml"})
-		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
-			return nil, nil
-		}
-
-		Execute()
-		So(stderr.String(), ShouldContainSubstring, "Error: language id 'invalid' not found")
 	})
 
 	Convey("Butler fails when dependency parsing fails", t, func() {

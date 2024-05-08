@@ -20,7 +20,7 @@ type Workspace struct {
 }
 
 // Collects workspaces for a language
-func (lang *Language) getWorkspaces(bc *ButlerConfig, paths []string) {
+func (lang *Language) getWorkspaces(bc *ButlerConfig, paths []string) (err error) {
 	allDirs := make(map[string]bool)
 	for _, pattern := range lang.FilePatterns {
 		for k, v := range getMatchingDirs(paths, pattern) {
@@ -28,7 +28,8 @@ func (lang *Language) getWorkspaces(bc *ButlerConfig, paths []string) {
 		}
 	}
 
-	lang.concurrentGetWorkspaces(bc, allDirs)
+	err = lang.concurrentGetWorkspaces(bc, allDirs)
+	return
 }
 
 // Returns the map of directories that contain `pattern`.
@@ -45,7 +46,7 @@ func getMatchingDirs(dirs []string, pattern string) (matches map[string]bool) {
 
 // Returns the full set of workspaces. Brute force multithreading, spins out the requests and lets
 // the go runtime handle the workload.
-func (lang *Language) concurrentGetWorkspaces(bc *ButlerConfig, allDirs map[string]bool) {
+func (lang *Language) concurrentGetWorkspaces(bc *ButlerConfig, allDirs map[string]bool) (err error) {
 	var (
 		mu sync.Mutex
 		wg sync.WaitGroup
@@ -71,6 +72,7 @@ func (lang *Language) concurrentGetWorkspaces(bc *ButlerConfig, allDirs map[stri
 		}(dir)
 	}
 	wg.Wait()
+	return
 }
 
 // Difference returns the elements in `a` that aren't in `b`.

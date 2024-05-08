@@ -25,7 +25,7 @@ languages:
     dependencyOptions:
       dependencyAnalysis: true
       excludeStdLibs: true
-      externalDependencies: false
+      externalDependencies: true
     dependencyCommands:
       external: "go run ./test_repo/user_commands/go_external_deps_method.go"
     taskCommands: 

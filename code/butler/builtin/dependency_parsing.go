@@ -6,6 +6,7 @@ package builtin
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -14,11 +15,13 @@ const (
 	envBranch        = "GIT_BRANCH"
 )
 
+var execOutputStub = (*exec.Cmd).Output
+
 func GetStdLibs(languageId string) (stdLibs []string, err error) {
 	languageId = strings.ToLower(languageId)
 	switch languageId {
 	case golangId:
-		stdLibs, err = goGetStdLibs()
+		stdLibs, err = getStdLibs()
 	default:
 		err = fmt.Errorf("language id '%v' not found", languageId)
 	}
@@ -30,7 +33,7 @@ func GetExternalDependencies(languageId string) (externalDeps []string, err erro
 	languageId = strings.ToLower(languageId)
 	switch languageId {
 	case golangId:
-		externalDeps, err = goGetChangedModFileDeps(os.Getenv(envBranch))
+		externalDeps, err = getChangedModFileDeps(os.Getenv(envBranch))
 	default:
 		err = fmt.Errorf("language id '%v' not found", languageId)
 	}
@@ -41,7 +44,7 @@ func GetExternalDependencies(languageId string) (externalDeps []string, err erro
 func GetWorkspaceDeps(languageId, directory string) (deps []string) {
 	switch languageId {
 	case golangId:
-		deps = goGetPkgDeps(directory)
+		deps, _ = getWorkspaceDeps(directory)
 	}
 
 	return

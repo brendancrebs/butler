@@ -50,7 +50,7 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 			dirtyFolders = append(dirtyFolders, lang.ExternalDeps...)
 		}
 
-		lang.getWorkspaces(bc, allPaths)
+		_ = lang.getWorkspaces(bc, allPaths)
 	}
 
 	if !bc.Task.RunAll {

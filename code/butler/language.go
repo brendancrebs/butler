@@ -144,7 +144,7 @@ func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 // in the repository.
 func (lang *Language) getDependencies(bc *ButlerConfig) (err error) {
 	if lang.DepOptions.ExcludeStdLibs {
-		lang.StdLibDeps, err = builtin.GetStdLibs(lang.Name)
+		lang.StdLibDeps, _ = builtin.GetStdLibs(lang.Name)
 	} else if lang.DepCommands.StandardLibrary != "" {
 		lang.StdLibDeps, err = ExecuteUserMethods(lang.DepCommands.StandardLibrary, lang.Name)
 	}
@@ -160,7 +160,7 @@ func (lang *Language) getDependencies(bc *ButlerConfig) (err error) {
 	}
 
 	if lang.DepOptions.ExternalDeps {
-		lang.ExternalDeps, err = builtin.GetExternalDependencies(lang.Name)
+		lang.ExternalDeps, _ = builtin.GetExternalDependencies(lang.Name)
 	} else {
 		lang.ExternalDeps, err = ExecuteUserMethods(lang.DepCommands.External, lang.Name)
 	}

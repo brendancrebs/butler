@@ -17,10 +17,13 @@ pipeline {
             }
             steps {
                 sh 'cd code && golangci-lint run --timeout 5m --allow-parallel-runners --concurrency=1 .'
-                sh 'cd code && go run ci/go_testing_command/go_testing_command.go'
+                sh 'cd code && go run ../ci/go_testing_command/go_testing_command.go'
 
                 sh 'cd code/butler && golangci-lint run --timeout 5m --allow-parallel-runners --concurrency=1 .'
-                sh 'cd code/butler && go run ci/go_testing_command/go_testing_command.go'
+                sh 'cd code/butler && go run ../../ci/go_testing_command/go_testing_command.go'
+
+                sh 'cd code/butler/builtin && golangci-lint run --timeout 5m --allow-parallel-runners --concurrency=1 .'
+                sh 'cd code/butler/builtin && go run ../../ci/go_testing_command/go_testing_command.go'
             }
         }
     }

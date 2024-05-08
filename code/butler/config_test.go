@@ -27,7 +27,7 @@ func Test_loadConfig(t *testing.T) {
 			DepOptions: &butler.DependencyOptions{
 				DependencyAnalysis: true,
 				ExcludeStdLibs:     true,
-				ExternalDeps:       false,
+				ExternalDeps:       true,
 			},
 			DepCommands: &butler.DependencyCommands{
 				External: "go run ./test_repo/user_commands/go_external_deps_method.go",
