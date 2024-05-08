@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,15 +19,15 @@ import (
 
 // Language specifies options for an individual language defined in the butler config.
 type Language struct {
-	Name           string              `yaml:"name,omitempty"`
-	TaskExec       *TaskCommands       `yaml:"taskCommands,omitempty"`
-	DepOptions     *DependencyOptions  `yaml:"dependencyOptions,omitempty"`
-	DepCommands    *DependencyCommands `yaml:"dependencyCommands,omitempty"`
-	Workspaces     []*Workspace        `yaml:"workspaces,omitempty"`
-	StdLibDeps     []string            `yaml:"stdLibDeps,omitempty"`
-	ExternalDeps   []string            `yaml:"externalDeps,omitempty"`
-	FilePatterns   []string            `yaml:"filePatterns,omitempty"`
-	VersionChanged bool                `yaml:"versionChanged,omitempty"`
+	Name         string              `yaml:"name,omitempty"`
+	TaskOptions  *TaskConfigurations `yaml:"taskOptions,omitempty"`
+	TaskCmd      *TaskCommands       `yaml:"taskCommands,omitempty"`
+	DepOptions   *DependencyOptions  `yaml:"dependencyOptions,omitempty"`
+	DepCommands  *DependencyCommands `yaml:"dependencyCommands,omitempty"`
+	Workspaces   []*Workspace        `yaml:"workspaces,omitempty"`
+	StdLibDeps   []string            `yaml:"stdLibDeps,omitempty"`
+	ExternalDeps []string            `yaml:"externalDeps,omitempty"`
+	FilePatterns []string            `yaml:"filePatterns,omitempty"`
 }
 
 // TaskCommands specifies language specific command options. These will be used to create all of the
@@ -52,15 +53,18 @@ type DependencyCommands struct {
 	StandardLibrary string `yaml:"standardLibrary,omitempty"`
 	Workspace       string `yaml:"workspace,omitempty"`
 	External        string `yaml:"external,omitempty"`
-	Version         string `yaml:"version,omitempty"`
 }
 
-// Creates tasks for all languages for each build step.
+// Creates tasks for all languages and populates the task queue.
 func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	now := time.Now()
 	fmt.Fprintf(cmd.OutOrStdout(), "Enumerating repo. Creating build, lint, and test tasks...\n")
 
+	buildEnabled := getEnabledBuildSteps(bc)
 	for i := 1; i < len(buildSteps); i++ {
+		if !buildEnabled[buildSteps[i]] && !bc.Task.RunAll {
+			continue
+		}
 		for _, lang := range bc.Languages {
 			buildCommands := getBuildCommands(lang)
 			command := buildCommands[buildSteps[i]]
@@ -74,7 +78,7 @@ func populateTaskQueue(bc *ButlerConfig, taskQueue *Queue, cmd *cobra.Command) {
 	fmt.Fprintf(cmd.OutOrStdout(), "Done. %s\n\n", time.Since(now).String())
 }
 
-// Executes commands that must be run before the creation of tasks
+// Runs a list of shell commands one after the other. If any command fails, Butler will fail.
 func (lang *Language) runCommandList(cmd *cobra.Command, commands []string) (err error) {
 	for _, command := range commands {
 		fmt.Fprintf(cmd.OutOrStdout(), "\nexecuting: %s...  ", command)
@@ -95,7 +99,7 @@ func (lang *Language) runCommandList(cmd *cobra.Command, commands []string) (err
 	return
 }
 
-// tasks a command as a single string and splits it into multiple parts.
+// Takes a command as a single string and splits it on spaces.
 func splitCommand(cmd string) []string {
 	commandParts := []string{}
 	splitCmd := strings.Fields(cmd)
@@ -103,7 +107,7 @@ func splitCommand(cmd string) []string {
 	return commandParts
 }
 
-// executes a command supplied for a user and awaits the response. Any user supplied command is
+// Executes a command supplied for a user and awaits the response. Any user supplied command is
 // expected to pipe an array of strings to stdout as the output of the command.
 func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 	commandParts := splitCommand(cmd)
@@ -148,6 +152,13 @@ func (lang *Language) getDependencies(bc *ButlerConfig) (err error) {
 		return
 	}
 
+	if len(lang.StdLibDeps) > 0 {
+		versionChanged, err := strconv.ParseBool(lang.StdLibDeps[0])
+		if err == nil {
+			bc.Task.RunAll = bc.Task.RunAll || versionChanged
+		}
+	}
+
 	if lang.DepOptions.ExternalDeps {
 		lang.ExternalDeps, err = builtin.GetExternalDependencies(lang.Name)
 	} else {
@@ -174,8 +185,8 @@ func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, command stri
 	}
 }
 
-// determines if the options set for a language in the config are valid.
-func (lang *Language) validateLanguage() error {
+// Determines if the options set for a language in the config are valid.
+func (lang *Language) validateLanguage(bc *ButlerConfig) error {
 	if lang.Name == "" {
 		return errors.New("a language supplied in the config without a name. Please supply a language identifier for each language in the config")
 	}
@@ -183,11 +194,12 @@ func (lang *Language) validateLanguage() error {
 		return fmt.Errorf("no file patterns supplied for '%s'. Please see the 'FilePatterns' options in the config spec for more information", lang.Name)
 	}
 
-	lang.validateDependencySettings()
+	lang.validateDependencySettings(bc)
 	return nil
 }
 
-func (lang *Language) validateDependencySettings() {
+// Validates config options related to a languages dependencies.
+func (lang *Language) validateDependencySettings(bc *ButlerConfig) {
 	if lang.DepCommands == nil {
 		lang.DepCommands = &DependencyCommands{
 			StandardLibrary: "",
@@ -205,6 +217,7 @@ func (lang *Language) validateDependencySettings() {
 	}
 
 	if !lang.DepOptions.DependencyAnalysis {
+		bc.Task.RunAll = true
 		lang.DepOptions.ExcludeStdLibs = false
 		lang.DepOptions.ExternalDeps = false
 		lang.DepCommands.StandardLibrary = ""

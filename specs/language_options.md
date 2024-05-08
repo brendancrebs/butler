@@ -94,8 +94,9 @@ languages:
     ...options...
 ```
 
-Each of the following fields can only be defined under the `taskCommands` tag. All of these commands are optional, but
-keep in mind that Butler won't do anything if it isn't provided with commands to execute.
+The commands that you supply for a language will be executed in every `workspace` for that language. Each of the
+following fields can only be defined under the `taskCommands` tag. All of these commands are optional, but keep in mind
+that Butler won't do anything if it isn't provided with commands to execute.
 
 #### setUp
 
@@ -194,12 +195,15 @@ taskCommands:
 ### Language Dependencies Overview
 
 This section relates to the gathering of dependencies for a language. This is completely optional, but the inclusion of
-dependency collection can lead to more efficient builds. The point of gathering language dependencies is that if certain
-dependencies are updated in a pull request, all code using that dependency will need to be built, tested, ect. If you
-choose not to supply methods for determining a language's dependencies, Butler cannot determine which code is or isn't
-using an updated dependency. As a result Butler will execute a full build every time it's run. This means all possible
-tasks will run, even on code that doesn't have a git diff. If Butler is aware of what dependencies have been changed, it
-can exclude certain code from the build process which will speed up build times in many cases.
+dependency collection can lead to more efficient builds. To enable dependency analysis, you must first set the
+`dependencyAnalysis` option under `Dependency Options` to true.
+
+The point of gathering language dependencies is that if certain dependencies are updated in a pull request, all code
+using that dependency will need to be built, tested, ect. If you choose not to supply methods for determining a
+language's dependencies, Butler cannot determine which code is or isn't using an updated dependency. As a result Butler
+will execute a full build every time it's run. This means all possible tasks will run, even on code that doesn't have a
+git diff. If Butler is aware of what dependencies have been changed, it can exclude certain code from the build process
+which will speed up build times in many cases.
 
 There are three types of dependencies Butler can track. The first are external dependencies which refers to any third
 party dependencies that are used by a language in the entire repository. This list of external dependencies will be added
@@ -222,7 +226,7 @@ the pull request, this will automatically trigger a full Butler build. Otherwise
 be excluded from the various `workspace` dependency lists and the external dependency list. If you wish to use Butler's
 dependency gathering feature, this is optional but recommended.
 
-### Dependency options
+### Dependency Options
 
 The following options are settings related to dependency analysis in Butler. However, this is NOT where user supplied
 dependency parsing commands will be supplied. To define these options you must create a `dependencyOptions` tag in the
@@ -248,8 +252,9 @@ languages:
 
 - Default: false
 
-- Description: `dependencyAnalysis` is an option to set if you want to use Butler's built in methods for determining the
-  external dependencies for the given language.
+- Description: `dependencyAnalysis` is an option to set if you want to enable dependency analysis in Butler. All other
+  dependency options will depend upon this option being set to `true`. If this option is set to `false`, or not set,
+  every Butler build will be a full build.
 
 #### excludeStdLibs
 
@@ -259,7 +264,7 @@ languages:
 
 - Description: `excludeStdLibs` is an option to set if you want to use Butler's built in methods for finding the
   standard library dependencies for a language and removing them from a languages dependency list to improve
-  performance.
+  performance. Setting this to true will prioritize Butler's built in method over any user supplied method for this task.
 
 #### externalDependencies
 
@@ -270,12 +275,17 @@ languages:
 - Description: `externalDependencies` is an option to set if you want to use Butler's built in methods for finding a
   languages third party dependencies. Butler will check if any of these dependencies have changed compared to the main
   branch. A change would include a version change or the addition/removal of a dependency. Butler will mark each
-  workspace that used a changed dependency as dirty.
+  workspace that used a changed dependency as dirty. Setting this to true will prioritize Butler's built in method over
+  any user supplied method for this task.
 
-### Dependency Command options
+### Dependency Command Options
 
-The following options relate to commands that Butler will execute to acquire the dependencies for a language. To define
-these options you must create a `dependencyCommands` tag in the language options like so:
+The following options relate to user supplied commands that Butler will execute to acquire the dependencies for a
+language. To use this feature, you must set the previous `dependencyAnalysis` option to true. These commands should pipe
+the dependencies for each task to Butler as a list of strings. The format of these strings will depend on how the
+language represents dependencies. If a user defines commands for all of these separate tasks, they should make sure the
+dependency string format is consistent between each so the dependencies can be correctly string matched. To define these
+options you must create a `dependencyCommands` tag in the language options like so:
 
 ```yaml
 languages:
@@ -295,7 +305,11 @@ languages:
 
 - Type: string
 
-- Description: `standardLibrary` is a command to return an array of standard library dependencies for a language.
+- Description: `standardLibrary` is a command to return an array of standard library dependencies for a language. This
+  command should return a list of dependencies represented by a list of strings. Like the other options, this list should
+  be piped to butler. Optionally, the user can supply whether the language version corresponding with the standard
+  library dependencies has changed by returning a boolean `true` or `false` as the first value of the list. If a language
+  version has changed, a full build will be triggered.
 
 - Example:
 
@@ -308,8 +322,9 @@ dependencyCommands:
 
 - Type: string
 
-- Description: `workspace` is a command to return an array of dependencies for a particular workspace. Expect
-  that this command will be executed at the location of every workspace that was collected for the given language.
+- Description: `workspace` is a command to return an array of dependencies for a particular workspace. This command
+  should simply return the dependencies for a single workspace. Expect that this command will be executed at the location
+  of every workspace that was collected for the given language.
 
 - Example:
 
@@ -322,7 +337,8 @@ dependencyCommands:
 
 - Type: string
 
-- Description: `external` is a command to return an array of external third party dependencies for a language.
+- Description: `external` is a command to return an array of external third party dependencies for a language that have
+  been changed. The string format to represent these dependencies will depend on the language.
 
 - Example:
 
@@ -330,10 +346,3 @@ dependencyCommands:
 dependencyCommands:
   external: "example command"
 ```
-
-#### version
-
-- Type: string
-
-- Description: `version` is a command to return if a language version has changed or not. A change in language version
-  will automatically trigger a full Butler build.

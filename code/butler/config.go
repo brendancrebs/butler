@@ -18,7 +18,7 @@ import (
 
 const (
 	configFileName    = ".butler.base.yaml"
-	ignoreFileName    = ".butler.ignore.yaml"
+	pathFileName      = ".butler.paths.yaml"
 	gitCommand        = "git"
 	butlerResultsPath = "./butler_results.json"
 	defaultCoverage   = "0"
@@ -26,7 +26,7 @@ const (
 
 var envBranchName = strings.TrimSpace(GetEnvOrDefault(envBranch, ""))
 
-// ButlerPaths specifies the allowed and ignored paths within the .butler.ignore.yaml.
+// ButlerPaths specifies the allowed and ignored paths within the .butler.paths.yaml.
 type ButlerPaths struct {
 	AllowedPaths    []string `yaml:"allowedPaths,omitempty"`
 	IgnorePaths     []string `yaml:"ignorePaths,omitempty"`
@@ -35,6 +35,8 @@ type ButlerPaths struct {
 	ResultsFilePath string   `yaml:"resultsFilePath,omitempty"`
 }
 
+// TaskConfigurations specifies general options related to tasks. This includes enabling/disabling
+// specific build steps.
 type TaskConfigurations struct {
 	Coverage string `yaml:"coverage,omitempty"`
 	RunAll   bool   `yaml:"runAll,omitempty"`
@@ -82,7 +84,7 @@ func (bc *ButlerConfig) Load(configPath string) (err error) {
 		return
 	}
 
-	if err = bc.LoadButlerIgnore(); err != nil {
+	if err = bc.LoadButlerPaths(); err != nil {
 		return
 	}
 
@@ -135,18 +137,18 @@ func (bc *ButlerConfig) ValidateConfig() (err error) {
 		return errors.New(`no languages have been provided in the config`)
 	}
 	for _, lang := range bc.Languages {
-		if err = lang.validateLanguage(); err != nil {
+		if err = lang.validateLanguage(bc); err != nil {
 			return
 		}
 	}
 	return
 }
 
-// validates that the workspace root has been set in the config. If so Butler will cd into the
+// Validates that the workspace root has been set in the config. If so Butler will cd into the
 // workspace root directory and set the WORKSPACE_ROOT environment variable.
 func (bc *ButlerConfig) setWorkspace() (err error) {
 	if bc.Paths.WorkspaceRoot == "" {
-		return errors.New("no workspace root has been set.\nPlease set a workspace root in the config")
+		return errors.New("no workspace root has been set. Please set a workspace root in the config")
 	}
 
 	bc.Paths.WorkspaceRoot, _ = filepath.Abs(bc.Paths.WorkspaceRoot)
@@ -168,13 +170,14 @@ func (bc *ButlerConfig) String() string {
 	%s>>>\n\n`, ConfigPath, string(configPretty))
 }
 
-func (bc *ButlerConfig) LoadButlerIgnore() (err error) {
-	ignorePath := path.Join(filepath.Dir(ConfigPath), ignoreFileName)
-	if _, err := os.Stat(ignorePath); err != nil {
+// Loads Butler paths file and merges the paths with whatever is in the base config.
+func (bc *ButlerConfig) LoadButlerPaths() (err error) {
+	pathFileLocation := path.Join(filepath.Dir(ConfigPath), pathFileName)
+	if _, err := os.Stat(pathFileLocation); err != nil {
 		return nil
 	}
 
-	content, err := os.ReadFile(ignorePath)
+	content, err := os.ReadFile(pathFileLocation)
 	if err != nil {
 		return
 	}
@@ -189,7 +192,7 @@ func (bc *ButlerConfig) LoadButlerIgnore() (err error) {
 	return
 }
 
-// concatenates two slices containing file paths. Each path in the resulting slice will be cleaned
+// Concatenates two slices containing file paths. Each path in the resulting slice will be cleaned
 // with filepath.Clean() and duplicates will be removed.
 func concatPaths(sliceA, sliceB []string) (result []string) {
 	sliceA = append(sliceA, sliceB...)
@@ -207,7 +210,7 @@ func concatPaths(sliceA, sliceB []string) (result []string) {
 	return
 }
 
-// returns the value of the given environment variable if it has been set. Otherwise return the
+// Returns the value of the given environment variable if it has been set. Otherwise return the
 // default.
 func GetEnvOrDefault(name, defaultValue string) string {
 	if v := os.Getenv(name); v != "" {
@@ -216,7 +219,7 @@ func GetEnvOrDefault(name, defaultValue string) string {
 	return defaultValue
 }
 
-// returns b if c is true, otherwise a.
+// Returns b if c is true, otherwise a.
 func useFlagIfChanged[T any](a, b T, c bool) T {
 	if c {
 		return b

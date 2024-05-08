@@ -32,7 +32,7 @@ func Test_loadConfig(t *testing.T) {
 			DepCommands: &butler.DependencyCommands{
 				External: "go run ./test_repo/user_commands/go_external_deps_method.go",
 			},
-			TaskExec: &butler.TaskCommands{
+			TaskCmd: &butler.TaskCommands{
 				Lint:  "echo go lint command",
 				Test:  "echo go test command",
 				Build: "echo go build command",
@@ -85,7 +85,7 @@ func Test_loadConfig(t *testing.T) {
 func Test_validateConfig(t *testing.T) {
 	testLanguage := &butler.Language{
 		Name: "test",
-		TaskExec: &butler.TaskCommands{
+		TaskCmd: &butler.TaskCommands{
 			SetUp: []string{"echo test"},
 		},
 		DepCommands: &butler.DependencyCommands{
@@ -104,7 +104,7 @@ func Test_validateConfig(t *testing.T) {
 			Languages: []*butler.Language{testLanguage},
 		}
 		err := testConfig.ValidateConfig()
-		So(err.Error(), ShouldContainSubstring, "no workspace root has been set.\nPlease set a workspace root in the config")
+		So(err.Error(), ShouldContainSubstring, "no workspace root has been set. Please set a workspace root in the config")
 	})
 
 	Convey("Invalid workspace root", t, func() {
@@ -165,8 +165,8 @@ func Test_validateConfig(t *testing.T) {
 	})
 }
 
-func Test_loadButlerIgnore(t *testing.T) {
-	Convey("Paths successfully parsed from .butler.ignore.", t, func() {
+func Test_loadButlerPaths(t *testing.T) {
+	Convey("Paths successfully parsed from .butler.paths.", t, func() {
 		testConfig := &butler.ButlerConfig{
 			Paths: &butler.ButlerPaths{
 				WorkspaceRoot: ".",
@@ -180,36 +180,36 @@ func Test_loadButlerIgnore(t *testing.T) {
 				WorkspaceRoot: ".",
 			},
 		}
-		err := testConfig.LoadButlerIgnore()
+		err := testConfig.LoadButlerPaths()
 		butler.ConfigPath = temp
 
 		So(err, ShouldBeNil)
 		So(testConfig, ShouldResemble, expected)
 	})
-	Convey("Nothing returned if no .butler.ignore file is found.", t, func() {
+	Convey("Nothing returned if no .butler.paths file is found.", t, func() {
 		temp := butler.ConfigPath
-		butler.ConfigPath = "./test_data/test_configs/bad_ignore_configs/missing_ignore_dir/.butler.base.yaml"
+		butler.ConfigPath = "./test_data/test_configs/path_configs/missing_paths_dir/.butler.base.yaml"
 		config := &butler.ButlerConfig{
 			Paths: &butler.ButlerPaths{},
 		}
 		_ = config.Load(butler.ConfigPath)
-		err := config.LoadButlerIgnore()
+		err := config.LoadButlerPaths()
 		butler.ConfigPath = temp
 
 		So(err, ShouldBeNil)
 		So(config.Paths.AllowedPaths, ShouldBeNil)
 		So(config.Paths.IgnorePaths, ShouldBeNil)
 	})
-	Convey("Failure to parse .butler.ignore.", t, func() {
+	Convey("Failure to parse .butler.paths.", t, func() {
 		temp := butler.ConfigPath
-		butler.ConfigPath = "./test_configs/bad_ignore_configs/.butler.base.yaml"
+		butler.ConfigPath = "./test_configs/path_configs/.butler.base.yaml"
 		testConfig := &butler.ButlerConfig{
 			Paths: &butler.ButlerPaths{
 				WorkspaceRoot: ".",
 			},
 		}
 
-		err := testConfig.LoadButlerIgnore()
+		err := testConfig.LoadButlerPaths()
 		butler.ConfigPath = temp
 
 		So(err, ShouldNotBeNil)

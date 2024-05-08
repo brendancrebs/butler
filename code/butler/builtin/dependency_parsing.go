@@ -30,7 +30,7 @@ func GetExternalDependencies(languageId string) (externalDeps []string, err erro
 	languageId = strings.ToLower(languageId)
 	switch languageId {
 	case golangId:
-		externalDeps, _, err = goGetChangedModFileDeps(os.Getenv(envBranch))
+		externalDeps, err = goGetChangedModFileDeps(os.Getenv(envBranch))
 	default:
 		err = fmt.Errorf("language id '%v' not found", languageId)
 	}

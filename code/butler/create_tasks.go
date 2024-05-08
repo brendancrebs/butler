@@ -40,7 +40,7 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 	}
 
 	for _, lang := range bc.Languages {
-		if err = lang.runCommandList(cmd, lang.TaskExec.SetUp); err != nil {
+		if err = lang.runCommandList(cmd, lang.TaskCmd.SetUp); err != nil {
 			return
 		}
 		if !bc.Task.RunAll {
@@ -64,9 +64,9 @@ func getTasks(bc *ButlerConfig, cmd *cobra.Command) (taskQueue *Queue, err error
 	return
 }
 
-// butlerSetup first gathers all non-blocked file paths in a repo. If a repo uses git, files with a
-// git diff will be collected for determine dirty workspaces later. This will also be used to
-// determine if a critical file has been changed.
+// First gathers all non-blocked file paths in a repo. If a repo uses git, files with a git diff
+// will be collected for determine dirty workspaces later. This will also be used to determine if a
+// critical file has been changed.
 func butlerSetup(bc *ButlerConfig) (allPaths []string, dirtyFolders []string, err error) {
 	allPaths = getFilePaths([]string{bc.Paths.WorkspaceRoot}, bc.Paths.AllowedPaths, bc.Paths.IgnorePaths, true)
 	if bc.PublishBranch != "" && !bc.Task.RunAll {
@@ -99,15 +99,11 @@ func shouldRunAll(bc *ButlerConfig, allDirtyPaths []string) (err error) {
 	bc.Task.Publish = strings.EqualFold(GetEnvOrDefault(envPublish, ""), "true") || currentBranch == bc.PublishBranch
 	bc.Task.RunAll = bc.Task.RunAll || CriticalPathChanged(allDirtyPaths, bc.Paths.CriticalPaths)
 
-	for _, lang := range bc.Languages {
-		bc.Task.RunAll = bc.Task.RunAll || !lang.DepOptions.DependencyAnalysis
-	}
-
 	return
 }
 
-// getCurrentBranch returns the whitespace trimmed result of `git branch --show-current` which
-// should be the branch, or an error.
+// Returns the whitespace trimmed result of `git branch --show-current` which should be the branch,
+// or an error.
 func getCurrentBranch() (branch string, err error) {
 	if branch = GetEnvOrDefault(envBranch, ""); branch != "" {
 		return
@@ -121,7 +117,7 @@ func getCurrentBranch() (branch string, err error) {
 	return
 }
 
-// Takes a set of directories and calls recurseFilePath on each. recurseFilePaths will return the
+// Takes a set of directories and calls recurseFilePath on each. recurseFilePaths() will return the
 // children of each directory and all of the child files will get returned by getFilePaths.
 func getFilePaths(dirs, allowed, ignored []string, shouldRecurse bool) []string {
 	paths := make([]string, len(dirs))
@@ -134,7 +130,7 @@ func getFilePaths(dirs, allowed, ignored []string, shouldRecurse bool) []string 
 }
 
 // Reads the directory at `path` and either appends filepaths or appends the result of a further
-// call to recurseFilepaths.
+// call to recurseFilepaths().
 func recurseFilepaths(paths, allowed, ignored []string, path string, shouldRecurse bool) []string {
 	fileInfos, _ := os.ReadDir(path)
 	for _, fi := range fileInfos {
@@ -180,8 +176,8 @@ func isAllowed(path string, allowed, ignored []string) bool {
 	return !isIgnored
 }
 
-// getDirtyPaths calls 'git diff --name-only {branch}' if branch is not blank, or 'git diff
-// --name-only' without a branch.  It returns a list of file names that changed.
+// Calls 'git diff --name-only {branch}' if branch is not blank, or 'git diff --name-only' without
+// a branch.  It returns a list of file names that changed.
 func getDirtyPaths(branch string) ([]string, error) {
 	branch = strings.TrimSpace(branch)
 
@@ -197,8 +193,8 @@ func getDirtyPaths(branch string) ([]string, error) {
 	return getLines(output, []byte{'\n'}), err
 }
 
-// getLines splits on the splitOn slice, converts each grouping to a string and trims space from it.
-// Returns the set of converted lines.
+// Splits on the splitOn slice, converts each grouping to a string and trims space from it. Returns
+// the set of converted lines.
 func getLines(input, splitOn []byte) (lines []string) {
 	split := bytes.Split(input, splitOn)
 	lines = make([]string, len(split))
@@ -225,7 +221,7 @@ func CriticalPathChanged(dirtyPaths, criticalPaths []string) (result bool) {
 	return
 }
 
-// getUniqueFolders returns a sorted set of unique folders based on a set of paths.
+// Returns a sorted set of unique folders based on a set of paths.
 func getUniqueFolders(paths []string) []string {
 	folderMap := make(map[string]bool)
 	for _, path := range paths {
@@ -271,7 +267,7 @@ func EvaluateDirtiness(workspaces []*Workspace, dirtyFolders []string) {
 	}
 }
 
-// convertToStringBoolMap converts a []string to a map[string]bool.
+// Converts a []string to a map[string]bool.
 func convertToStringBoolMap(values []string) map[string]bool {
 	valueMap := make(map[string]bool)
 	for _, value := range values {

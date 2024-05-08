@@ -68,15 +68,27 @@ func (step *BuildStep) UnmarshalJSON(b []byte) error {
 func getBuildCommands(lang *Language) map[BuildStep]string {
 	return map[BuildStep]string{
 		BuildStepUnknown: "",
-		BuildStepLint:    lang.TaskExec.Lint,
-		BuildStepTest:    lang.TaskExec.Test,
-		BuildStepBuild:   lang.TaskExec.Build,
-		BuildStepPublish: lang.TaskExec.Publish,
+		BuildStepLint:    lang.TaskCmd.Lint,
+		BuildStepTest:    lang.TaskCmd.Test,
+		BuildStepBuild:   lang.TaskCmd.Build,
+		BuildStepPublish: lang.TaskCmd.Publish,
+	}
+}
+
+// maps the build steps to boolean values which indicate if they're enabled or not.
+func getEnabledBuildSteps(bc *ButlerConfig) map[BuildStep]bool {
+	return map[BuildStep]bool{
+		BuildStepUnknown: false,
+		BuildStepLint:    bc.Task.Lint,
+		BuildStepTest:    bc.Task.Test,
+		BuildStepBuild:   bc.Task.Build,
+		BuildStepPublish: bc.Task.Publish,
 	}
 }
 
 var buildSteps = []BuildStep{BuildStepUnknown, BuildStepLint, BuildStepTest, BuildStepBuild, BuildStepPublish}
 
+// Maps build steps to their string values for printing.
 var toBuildStep = map[string]BuildStep{
 	BuildStepUnknown.String(): BuildStepUnknown,
 	BuildStepLint.String():    BuildStepLint,

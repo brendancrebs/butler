@@ -10,8 +10,8 @@ SEL Confidential
 The `Butler Config` is the file that will determine the majority of the `Butler's` behavior. This spec will explain the
 various options the Butler config and cli offer and example usage of each. The config is a yaml file and is named
 `.butler.base.yaml` by default. A yaml file of a different name can be specified as the `Butler Config` if the path to it is
-passed through the cli. Beyond the base config, a `Butler ignore` file can also be specified. This file must be named
-`.butler.ignore.yaml` and will contain paths within a repo that should be either allowed or ignored by Butler.
+passed through the cli. Beyond the base config, a `Butler paths` file can also be specified. This file must be named
+`.butler.paths.yaml` and will contain paths within a repo that should be either allowed or ignored by Butler.
 
 ## Specification
 
@@ -72,7 +72,7 @@ allowedPaths:
 - Example:
 
 ```yaml
-ignore-paths:
+ignorePaths:
   - node_modules
   - apps/butler/test_data
   - scripts
@@ -90,7 +90,7 @@ ignore-paths:
 - Example:
 
 ```yaml
-critical-paths:
+criticalPaths:
   - lib/interfaces
   - apps/example/critical
   - .butler.base.yaml
@@ -179,13 +179,15 @@ resultsFilePath: "./butler_results.json"
 IMPORTANT: Butler requires information about the languages in a repository. For detailed information about what
 information to supply and how, see the [language_options.md][1] spec file.
 
-### Butler Ignore
+### Butler Paths File
 
-The `.butler.ignore.yaml` file can be used to store the `allowedPaths` and `ignoredPaths`. To use this feature, add a
-file with the name `.butler.ignore.yaml` at the root of the repo. Then you may add the allowed/ignored paths with this
-same syntax as specified for the allowed/ignored paths in the base config above.
+The `.butler.paths.yaml` file can be used to store paths related to Butler. Specifically, you can defined a list of
+`allowedPaths`, `ignoredPaths`, and `criticalPaths` in this file. The point of this feature is to allow for a place to
+store a potentially long and bloated list of paths which would clutter the base config. To use this feature, add a file
+with the name `.butler.paths.yaml` at the root of the repo. Then you may add the allowed/ignored paths with this same
+syntax as specified for the allowed/ignored paths in the base config above.
 
-#### Butler Ignore Example
+#### Butler Paths Example
 
 ```yaml
 allowedPaths:

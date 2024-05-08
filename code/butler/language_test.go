@@ -18,7 +18,7 @@ func Test_createTasks(t *testing.T) {
 	Convey("Coverage for createTasks", t, func() {
 		inputLanguage := &Language{
 			Name: "golang",
-			TaskExec: &TaskCommands{
+			TaskCmd: &TaskCommands{
 				Lint:    "echo go lint command",
 				Test:    "echo go test command",
 				Build:   "echo go build command",
@@ -35,15 +35,15 @@ func Test_createTasks(t *testing.T) {
 		}
 		testQueue := &Queue{}
 
-		inputLanguage.createTasks(testQueue, BuildStepTest, inputLanguage.TaskExec.Lint, false)
+		inputLanguage.createTasks(testQueue, BuildStepTest, inputLanguage.TaskCmd.Lint, false)
 		So(inputLanguage.Workspaces, ShouldNotBeNil)
 	})
 }
 
-func Test_preliminaryCommands(t *testing.T) {
+func Test_runCommandList(t *testing.T) {
 	inputLanguage := &Language{
 		Name: "test",
-		TaskExec: &TaskCommands{
+		TaskCmd: &TaskCommands{
 			Lint:  "echo lint command",
 			SetUp: []string{""},
 		},
@@ -56,7 +56,7 @@ func Test_preliminaryCommands(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		err := langs[0].runCommandList(cmd, langs[0].TaskExec.SetUp)
+		err := langs[0].runCommandList(cmd, langs[0].TaskCmd.SetUp)
 
 		w.Close()
 		out, _ := io.ReadAll(r)
@@ -70,7 +70,7 @@ func Test_preliminaryCommands(t *testing.T) {
 		undo := replaceStubs()
 		defer undo()
 
-		inputLanguage.TaskExec.SetUp = []string{"fail command"}
+		inputLanguage.TaskCmd.SetUp = []string{"fail command"}
 		langs := []*Language{inputLanguage}
 		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
 			if len(cmd.Args) == 2 && cmd.Args[0] == "fail" {
@@ -79,7 +79,7 @@ func Test_preliminaryCommands(t *testing.T) {
 			return nil, nil
 		}
 
-		err := langs[0].runCommandList(cmd, langs[0].TaskExec.SetUp)
+		err := langs[0].runCommandList(cmd, langs[0].TaskCmd.SetUp)
 		So(err.Error(), ShouldContainSubstring, "error executing 'fail command'\nerror: test command failed\noutput:")
 	})
 }
@@ -145,6 +145,9 @@ func Test_validateLanguage(t *testing.T) {
 		language      *Language
 		expectedError error
 	}
+	testConfig := &ButlerConfig{
+		Task: &TaskConfigurations{},
+	}
 	tests := []template{
 		{"language config validation passes", &Language{Name: "test", FilePatterns: []string{".test"}}, nil},
 		{"fails when a name id is not provided", &Language{FilePatterns: []string{".test"}}, errors.New("a language supplied in the config without a name. Please supply a language identifier for each language in the config")},
@@ -153,7 +156,7 @@ func Test_validateLanguage(t *testing.T) {
 
 	for _, test := range tests {
 		Convey(test.desc, t, func() {
-			So(test.language.validateLanguage(), ShouldResemble, test.expectedError)
+			So(test.language.validateLanguage(testConfig), ShouldResemble, test.expectedError)
 		})
 	}
 }

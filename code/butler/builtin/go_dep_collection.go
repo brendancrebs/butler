@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -31,7 +32,9 @@ func goGetStdLibs() ([]string, error) {
 	for s.Scan() {
 		results = append(results, s.Text())
 	}
-
+	changeSet, _ := goGetChangedModFileDeps(os.Getenv(envBranch))
+	versionChanged, err := didVersionChange(changeSet), err
+	results = append([]string{strconv.FormatBool(versionChanged)}, results...)
 	return results, err
 }
 
@@ -52,7 +55,7 @@ func goGetPkgDeps(directory string) (results []string) {
 }
 
 // goGetModFileDiff returns the list of changed dependencies listed in the mod file.
-func goGetChangedModFileDeps(branch string) (changeSet []string, languageVersionChanged bool, err error) {
+func goGetChangedModFileDeps(branch string) (changeSet []string, err error) {
 	err = filepath.WalkDir(os.Getenv(envWorkspaceRoot), func(path string, d fs.DirEntry, walkErr error) error {
 		if d.IsDir() {
 			return nil
@@ -64,7 +67,6 @@ func goGetChangedModFileDeps(branch string) (changeSet []string, languageVersion
 		}
 		return walkErr
 	})
-	languageVersionChanged = goDidLanguageVersionChange(changeSet)
 	return
 }
 
@@ -118,7 +120,7 @@ func convertLinesToStrings(input, splitOn []byte) (lines []string) {
 	return
 }
 
-func goDidLanguageVersionChange(modDiff []string) (didChange bool) {
+func didVersionChange(modDiff []string) (didChange bool) {
 	for _, line := range modDiff {
 		if strings.Split(line, " ")[0] == goName {
 			didChange = true

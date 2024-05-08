@@ -9,7 +9,7 @@ paths:
   criticalPaths:
     - .devcontainer/devcontainer.json
     - .butler.base.yaml
-    - .butler.ignore.yaml
+    - .butler.paths.yaml
     - code
 
 tasks:

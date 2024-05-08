@@ -57,9 +57,8 @@ func Execute() {
 }
 
 func parseFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&ConfigPath, "cfg", ".butler.base.yaml", "Path to config file.")
-	cmd.PersistentFlags().StringVarP(&flags.Task.Coverage, "coverage", "c", "0",
-		"the percentage of code coverage that is acceptable for tests to pass.")
+	cmd.PersistentFlags().StringVarP(&ConfigPath, "config", "c", ".butler.base.yaml", "Path to config file.")
+
 	cmd.PersistentFlags().BoolVarP(&flags.Task.RunAll, "all", "a", false, "Runs all tasks regardless of diff.")
 
 	cmd.PersistentFlags().BoolVarP(&flags.Task.Lint, "lint", "l", false, "Enables linting")
@@ -70,6 +69,9 @@ func parseFlags(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().BoolVarP(&flags.Task.Publish, "publish", "p", false,
 		"Enables publishing.  Publishing also requires --publish-branch and --build-id.")
+
+	cmd.PersistentFlags().StringVar(&flags.Task.Coverage, "coverage", "0",
+		"the percentage of code coverage that is acceptable for tests to pass.")
 
 	cmd.PersistentFlags().StringVar(&flags.PublishBranch, "publish-branch", envBranchName,
 		"Branch when we will publish or diff to, based on equality to current branch name.")
@@ -96,10 +98,10 @@ func run(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 
-	// **PLACE-HOLDER FOR TASK EXECUTION**
+	// **PLACEHOLDER FOR TASK EXECUTION**
 
 	for _, lang := range config.Languages {
-		if err = lang.runCommandList(cmd, lang.TaskExec.CleanUp); err != nil {
+		if err = lang.runCommandList(cmd, lang.TaskCmd.CleanUp); err != nil {
 			return
 		}
 	}
@@ -107,7 +109,7 @@ func run(cmd *cobra.Command, args []string) (err error) {
 	return
 }
 
-// For now this just prints the config to Butler results since no tasks are being created.
+// For now this just prints the config to Butler results since no tasks are being executed.
 func publishResults(bc *ButlerConfig) {
 	resultBytes, _ := json.MarshalIndent(bc, "", "\t")
 	_ = os.WriteFile(bc.Paths.ResultsFilePath, resultBytes, 0o600)

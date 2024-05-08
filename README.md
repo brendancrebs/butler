@@ -13,16 +13,16 @@ the [butler_config.md][1] file in the spec directory.
 At a high level, Butler simply runs commands to lint, test, build, and publish parts of a repository. Here is the
 implementation steps to accomplish this:
 
-1. First, Butler will read from a user defined config called `.butler.base.yaml` which will be defined at the root of
-   the repo. This will contain most of the information that will influence Butler's behavior. Butler is also a cli tool,
-   so the flags passed via the cli will be merged with the config settings. The cli flags will take precedence over the
-   config file settings.
+1. First, Butler will read from a user defined config called `.butler.base.yaml`. This will contain most of the information
+   that will influence Butler's behavior. Butler is also a cli tool, so the flags passed via the cli will be merged with
+   the config settings. The cli flags will take precedence over the config file settings. The location of this config
+   should be passed through the cli with the `-c, --config` flag.
 
-2. Next, paths for Butler to search down will be defined in an ignore file called `.butler.ignore.yaml` which will also
-   be defined at the root of the repo. These paths can also be defined in the base config.
+2. Next, paths for Butler to search can be defined in an file called `.butler.paths.yaml`. This file will be defined in
+   whatever directory the `.butler.base.yaml` is stored. These paths can also be defined in the base config.
 
-3. When the config file have been read from, Butler will then walk through the repository to gather a list of files
-   based on the paths the user has allowed and hasn't ignored in the config file.
+3. When the config files have been read from, Butler will walk through the repository to gather a list of files based on
+   the paths the user has allowed and hasn't ignored in the config file.
 
 4. After an array of paths has been collected, Butler will determine units of code files to execute commands for. This
    unit will be referred to as a `workspace`. Workspaces will be constructed based on the filepaths determined

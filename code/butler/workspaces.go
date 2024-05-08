@@ -31,7 +31,7 @@ func (lang *Language) getWorkspaces(bc *ButlerConfig, paths []string) {
 	lang.concurrentGetWorkspaces(bc, allDirs)
 }
 
-// getMatchingDirs returns the map of directories that contain `pattern`.
+// Returns the map of directories that contain `pattern`.
 func getMatchingDirs(dirs []string, pattern string) (matches map[string]bool) {
 	matches = make(map[string]bool)
 	for _, dir := range dirs {
@@ -53,10 +53,10 @@ func (lang *Language) concurrentGetWorkspaces(bc *ButlerConfig, allDirs map[stri
 
 	for dir := range allDirs {
 		wg.Add(1)
-		// must proxy dir into a different variable to make it safe to use inside the closure.
+		// Must proxy dir into a different variable to make it safe to use inside the closure.
 		go func(thisDir string) {
 			workspace := &Workspace{Location: thisDir}
-			if lang.DepCommands.Workspace != "" && !bc.Task.RunAll {
+			if lang.DepOptions.DependencyAnalysis && !bc.Task.RunAll {
 				deps := builtin.GetWorkspaceDeps(lang.Name, thisDir)
 				prunedDeps := Difference(deps, lang.StdLibDeps)
 				workspace.Dependencies = prunedDeps
