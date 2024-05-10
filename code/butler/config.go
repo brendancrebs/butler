@@ -103,9 +103,9 @@ func (bc *ButlerConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err er
 		Task: &TaskConfigurations{
 			Coverage: "0",
 			RunAll:   false,
-			Lint:     false,
-			Test:     false,
-			Build:    false,
+			Lint:     true,
+			Test:     true,
+			Build:    true,
 			Publish:  false,
 		},
 	}

@@ -28,6 +28,7 @@ type Language struct {
 	StdLibDeps   []string            `yaml:"stdLibDeps,omitempty"`
 	ExternalDeps []string            `yaml:"externalDeps,omitempty"`
 	FilePatterns []string            `yaml:"filePatterns,omitempty"`
+	ExcludeFiles []string            `yaml:"excludeFiles,omitempty"`
 }
 
 // TaskCommands specifies language specific command options. These will be used to create all of the

@@ -7,9 +7,9 @@ SEL Confidential
 
 ## Introduction
 
-For Butler to execute `tasks` for a language in your repository, you must first supply information about that language to
-the config. You will supply each language in your repo as a list under the label of `languages`. An example `languages`
-tag is shown below:
+For Butler to execute `tasks` for a language in your repository, you must first supply information about that language
+to the config. You will supply each language in your repo as a list under the label of `languages`. An example
+`languages` tag is shown below:
 
 ```yaml
 languages:
@@ -25,10 +25,10 @@ languages:
 
 The options described by this spec document will be defined on a per language basis.
 
-### Mandatory Language options
+### Mandatory Language Options
 
-There are a handful of language options that are mandatory for Butler to function. Each of the following options
-must be set for every language defined under the `languages` tag.
+There are a handful of language options that are mandatory for Butler to function. Each of the following options must be
+set for every language defined under the `languages` tag.
 
 #### name
 
@@ -37,7 +37,7 @@ must be set for every language defined under the `languages` tag.
 - Description: `name` is the identifier for a language. If you wish to use built in dependency parsing methods for the
   language, the `name` field will need to match one of the supported languages for Butler.
 
-- Example:
+- Config Example:
 
 ```yaml
 name: "golang"
@@ -47,10 +47,10 @@ name: "golang"
 
 - Type: string array
 
-- Description: `filePatterns` is a field for the user to supply pattern strings associated with code files for
-  a language. The file pattern could be a file extension, a common file name, a specific file path, or any combination
-  of these. When a directory with a defined file pattern is found, Butler will create a `workspace` for this directory.
-  A `workspace` is a directory that contains the relevant files for command execution.
+- Description: `filePatterns` is a field for the user to supply pattern strings associated with code files for a
+  language. The file pattern could be a file extension, a common file name, a specific file path, or any combination of
+  these. When a directory with a defined file pattern is found, Butler will create a `workspace` for this directory. A
+  `workspace` is a directory that contains the relevant files for command execution.
 
   The commands that get defined for a language will get executed in all `workspaces` that Butler finds for that
   language. Keep this in mind when choosing which file pattern(s) to use. Using the example of Javascript below: a
@@ -60,7 +60,7 @@ name: "golang"
   is, AND the directory where the `.js` files are. For a case like this you would select just one of the patterns to
   avoid executing commands in directories they weren't intended to be run in.
 
-- Examples:
+- Config Examples:
 
 Example for Javascript:
 
@@ -77,11 +77,29 @@ filePatterns:
   - ".h"
 ```
 
+- Scenarios:
+
+You may have a situation where you don't want the same command to run for every workspace.
+
+### Optional Language Settings
+
+The remaining settings in this spec are not required for Butler to run. However, it is strongly recommended that a user
+reads and understands them so they can properly utilize Butler as designed. In particular, the user should review the
+`Language Task Commands` section. Without defining any commands, Butler will not be able to do anything for a language.
+
+#### TODO: excludeFiles
+
+- Type: string array
+
+- Description: `excludeFiles` is a field that is correlated with the `filePatterns` setting. This field is where you
+  would define a list of specific files or file patterns that you would want Butler to ignore when searching for
+  `workspaces`. The input format for the files is exactly the same as for `filePatterns`. An example use case for this
+  would be if you didn't want the standard testing command to be executed in a specific workspace.
+
 ### Language Task Commands
 
-For Butler to run `tasks` for a language, appropriate shell commands should be provided for building, testing,
-linting, ect. To set any number of these commands, you must first create a `taskCommands` tag in the language options
-like so:
+For Butler to run `tasks` for a language, appropriate shell commands should be provided for building, testing, linting,
+ect. To set any number of these commands, you must first create a `taskCommands` tag in the language options like so:
 
 ```yaml
 languages:
@@ -107,7 +125,7 @@ that Butler won't do anything if it isn't provided with commands to execute.
   commands here if you want something about the build server environment or the language to be altered before Butler
   does anything related to that language.
 
-- Example
+- Config Example:
 
 ```yaml
 taskCommands:
@@ -122,7 +140,7 @@ taskCommands:
 - Description: `cleanUp` is similar to `setUp`. The difference is that these commands will be executed after tasks have
   finished. These commands will run regardless of whether the build succeeded or failed.
 
-- Example
+- Config Example:
 
 ```yaml
 taskCommands:
@@ -134,10 +152,10 @@ taskCommands:
 
 - Type: string
 
-- Description: `lint` is the field where you supply the shell command you wish to have executed during the linting
-  stage for the given language.
+- Description: `lint` is the field where you supply the shell command you wish to have executed during the linting stage
+  for the given language.
 
-- Example:
+- Config Example:
 
 ```yaml
 taskCommands:
@@ -148,10 +166,10 @@ taskCommands:
 
 - Type: string
 
-- Description: `test` is the field where you supply the shell command you wish to have executed during the testing
-  stage for the given language.
+- Description: `test` is the field where you supply the shell command you wish to have executed during the testing stage
+  for the given language.
 
-- Example:
+- Config Example:
 
 ```yaml
 taskCommands:
@@ -166,7 +184,7 @@ taskCommands:
 - Description: `build` is the field where you supply the shell command you wish to have executed during the building
   stage for the given language.
 
-- Example:
+- Config Example:
 
 ```yaml
 taskCommands:
@@ -182,7 +200,7 @@ taskCommands:
 - Description: `publish` is the field where you supply the shell command you wish to have executed during the publishing
   stage for the given language.
 
-- Example:
+- Config Example:
 
 ```yaml
 taskCommands:
@@ -206,18 +224,18 @@ git diff. If Butler is aware of what dependencies have been changed, it can excl
 which will speed up build times in many cases.
 
 There are three types of dependencies Butler can track. The first are external dependencies which refers to any third
-party dependencies that are used by a language in the entire repository. This list of external dependencies will be added
-to a list of workspaces which have been marked as `dirty` for having a git diff. This is because those `workspaces`
-could be partially or fully exported as dependencies themselves. Therefore they should be treated in the same manner that
-updated third party dependencies are.
+party dependencies that are used by a language in the entire repository. This list of external dependencies will be
+added to a list of workspaces which have been marked as `dirty` for having a git diff. This is because those
+`workspaces` could be partially or fully exported as dependencies themselves. Therefore they should be treated in the
+same manner that updated third party dependencies are.
 
 The second type are called `workspace` dependencies. These are dependencies that are used by a particular `workspace`.
 If this feature is utilized, each `workspace` will be tracked by Butler with the list of what dependencies it's using.
 For Butler's language dependency feature to function properly, both of these dependency types must be tracked. The
 reason is that Butler will attempt to determine which of the external dependencies have been changed. A list of these
 changed dependencies will be compared against the dependencies being used in each `workspace` to determine if that
-`workspace` is `dirty` or not. A `dirty workspace` is a `workspace` that requires rebuild. If a `workspace` imports
-something from another workspace that has been marked as dirty, it too will be marked as dirty.
+`workspace` is `dirty` or not. A `dirty workspace` is a `workspace` that needs to be included in the Butler build. If a
+`workspace` imports something from another workspace that has been marked as dirty, it too will be marked as dirty.
 
 The third type will be standard library dependencies for a language. You may give Butler the option to track these so
 that they can be identified and excluded. Standard library dependencies should typically be excluded because we can
@@ -264,7 +282,8 @@ languages:
 
 - Description: `excludeStdLibs` is an option to set if you want to use Butler's built in methods for finding the
   standard library dependencies for a language and removing them from a languages dependency list to improve
-  performance. Setting this to true will prioritize Butler's built in method over any user supplied method for this task.
+  performance. Setting this to true will prioritize Butler's built in method over any user supplied method for this
+  task.
 
 #### externalDependencies
 
@@ -306,12 +325,12 @@ languages:
 - Type: string
 
 - Description: `standardLibrary` is a command to return an array of standard library dependencies for a language. This
-  command should return a list of dependencies represented by a list of strings. Like the other options, this list should
-  be piped to butler. Optionally, the user can supply whether the language version corresponding with the standard
-  library dependencies has changed by returning a boolean `true` or `false` as the first value of the list. If a language
-  version has changed, a full build will be triggered.
+  command should return a list of dependencies represented by a list of strings. Like the other options, this list
+  should be piped to butler. Optionally, the user can supply whether the language version corresponding with the
+  standard library dependencies has changed by returning a boolean `true` or `false` as the first value of the list. If
+  a language version has changed, a full build will be triggered.
 
-- Example:
+- Config Example:
 
 ```yaml
 dependencyCommands:
@@ -323,10 +342,18 @@ dependencyCommands:
 - Type: string
 
 - Description: `workspace` is a command to return an array of dependencies for a particular workspace. This command
-  should simply return the dependencies for a single workspace. Expect that this command will be executed at the location
-  of every workspace that was collected for the given language.
+  should simply return the dependencies for a single workspace. Expect that this command will be executed at the
+  location of every workspace that was collected for the given language.
 
-- Example:
+  When a particular workspace imports other workspaces as dependencies, those dependencies have to be matched with the
+  workspaces Butler has collected independently. Because of this, the internal dependencies should be formatted in one
+  of two ways so Butler can properly match the path strings. One option is a path to the workspace extending from the
+  `workspaceRoot` defined in the config. The next would be to supply the absolute path to the workspace. For clarity,
+  paths to workspaces are represented as absolute paths within Butler.
+
+  External dependencies however will be represented in the specified format for that language.
+
+- Config Example:
 
 ```yaml
 dependencyCommands:
@@ -340,7 +367,7 @@ dependencyCommands:
 - Description: `external` is a command to return an array of external third party dependencies for a language that have
   been changed. The string format to represent these dependencies will depend on the language.
 
-- Example:
+- Config Example:
 
 ```yaml
 dependencyCommands:
