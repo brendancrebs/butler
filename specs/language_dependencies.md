@@ -29,7 +29,9 @@ User made dependency analysis methods are expected to return a list of strings t
 form. A common format for language dependencies is important because Butler will preform string comparisons between the
 dependencies of an individual `workspace` against a list of dependencies that have changed. If a dependency is listed in
 two separate formats, Butler might not be able to detect that a changed dependency was present in a particular
-workspace.
+workspace. It is only relevant to follow the suggested external dependency format if the user does not also supply a
+`workspace` dependency method. In that case they may use their own defined format since Butler will not be parsing
+dependencies on its own.
 
 ### Internal Dependencies
 
@@ -43,3 +45,7 @@ importing it.
 ## Golang
 
 - Language ID: `golang`
+
+- Dependency Format: For `golang`, an external dependency should be represented as it is found in the `go.mod` file.
+  The version should not be included since only dependencies that have changed should be returned. An example list of go
+  dependencies might look like, `github.com/smartystreets/goconvey, github.com/spf13/cobra, gopkg.in/yaml.v2`.

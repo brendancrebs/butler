@@ -11,12 +11,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func Test_criticalFolderChanged(t *testing.T) {
+func Test_criticalPathChanged(t *testing.T) {
 	type template struct {
-		desc            string
-		dirtyFolders    []string
-		criticalFolders []string
-		expected        bool
+		desc          string
+		dirtyPaths    []string
+		criticalPaths []string
+		expected      bool
 	}
 	tests := []template{
 		{"empty dirtyFolders slice", []string{}, []string{"test_path/critical_folder/"}, false},
@@ -30,7 +30,7 @@ func Test_criticalFolderChanged(t *testing.T) {
 
 	for _, test := range tests {
 		Convey(test.desc, t, func() {
-			So(butler.CriticalPathChanged(test.dirtyFolders, test.criticalFolders), ShouldResemble, test.expected)
+			So(butler.CriticalPathChanged(test.dirtyPaths, test.criticalPaths), ShouldResemble, test.expected)
 		})
 	}
 }

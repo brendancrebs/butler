@@ -19,18 +19,17 @@ tasks:
   publish: false
 
 languages:
-  - workspaceFiles:
-      - "invalid.bad"
+  - name: "golang"
+    workspaceFiles: 
+      - ".go"
     dependencyOptions:
-      dependencyAnalysis: false
-      excludeStdLibs: true
+      dependencyAnalysis: true
+      excludeStdLibs: false
       externalDependencies: true
     dependencyCommands:
-      external: "echo collect deps"
+      standardLibrary: "go run ./test_repo/user_commands/version_changed/go_version_changed.go"
     taskCommands: 
-      lint: "echo lint command"
-      test: "echo test command"
-      build: "echo build command"
-      publish: "echo publish command"
-      setUp:
-          - "echo test"
+      lint: "echo go lint command"
+      test: "echo go test command"
+      build: "echo go build command"
+      publish: "echo go publish command"

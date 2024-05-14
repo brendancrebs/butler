@@ -20,7 +20,7 @@ tasks:
 
 languages:
   - name: "invalid"
-    filePatterns:
+    workspaceFiles:
       - "invalid.bad"
     dependencyOptions:
       dependencyAnalysis: true

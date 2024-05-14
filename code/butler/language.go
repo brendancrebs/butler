@@ -17,22 +17,21 @@ import (
 	"selinc.com/butler/code/butler/builtin"
 )
 
-// Language specifies options for an individual language defined in the butler config.
+// Specifies options for an individual language defined in the butler config.
 type Language struct {
-	Name         string              `yaml:"name,omitempty"`
-	TaskOptions  *TaskConfigurations `yaml:"taskOptions,omitempty"`
-	TaskCmd      *TaskCommands       `yaml:"taskCommands,omitempty"`
-	DepOptions   *DependencyOptions  `yaml:"dependencyOptions,omitempty"`
-	DepCommands  *DependencyCommands `yaml:"dependencyCommands,omitempty"`
-	Workspaces   []*Workspace        `yaml:"workspaces,omitempty"`
-	StdLibDeps   []string            `yaml:"stdLibDeps,omitempty"`
-	ExternalDeps []string            `yaml:"externalDeps,omitempty"`
-	FilePatterns []string            `yaml:"filePatterns,omitempty"`
-	ExcludeFiles []string            `yaml:"excludeFiles,omitempty"`
+	Name           string              `yaml:"name,omitempty"`
+	TaskOptions    *TaskConfigurations `yaml:"taskOptions,omitempty"`
+	TaskCmd        *TaskCommands       `yaml:"taskCommands,omitempty"`
+	DepOptions     *DependencyOptions  `yaml:"dependencyOptions,omitempty"`
+	DepCommands    *DependencyCommands `yaml:"dependencyCommands,omitempty"`
+	Workspaces     []*Workspace        `yaml:"workspaces,omitempty"`
+	StdLibDeps     []string            `yaml:"stdLibDeps,omitempty"`
+	ExternalDeps   []string            `yaml:"externalDeps,omitempty"`
+	WorkspaceFiles []string            `yaml:"workspaceFiles,omitempty"`
 }
 
-// TaskCommands specifies language specific command options. These will be used to create all of the
-// tasks for a language.
+// Specifies language specific command options. These will be used to create all of the tasks for a
+// language.
 type TaskCommands struct {
 	SetUp   []string `yaml:"setUp,omitempty"`
 	CleanUp []string `yaml:"cleanUp,omitempty"`
@@ -42,14 +41,14 @@ type TaskCommands struct {
 	Publish string   `yaml:"publish,omitempty"`
 }
 
-// DependencyOptions specifies options related to dependency analysis which aren't commands.
+// Specifies options related to dependency analysis which aren't commands.
 type DependencyOptions struct {
 	DependencyAnalysis bool `yaml:"dependencyAnalysis,omitempty"`
 	ExcludeStdLibs     bool `yaml:"excludeStdLibs,omitempty"`
 	ExternalDeps       bool `yaml:"externalDependencies,omitempty"`
 }
 
-// DependencyCommands specifies dependency gathering commands for an individual language.
+// Specifies dependency gathering commands for an individual language.
 type DependencyCommands struct {
 	StandardLibrary string `yaml:"standardLibrary,omitempty"`
 	Workspace       string `yaml:"workspace,omitempty"`
@@ -124,7 +123,7 @@ func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 		return
 	}
 
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, 8192)
 	n, err := readStub(stdout, buffer)
 	if err != nil {
 		err = fmt.Errorf("error executing '%s': %v", cmd, err)
@@ -141,8 +140,8 @@ func ExecuteUserMethods(cmd, name string) (response []string, err error) {
 	return
 }
 
-// Gathers all the standard library dependencies and external third party dependencies for a language
-// in the repository.
+// Gathers all the standard library dependencies and external third party dependencies for a
+// language in the repository.
 func (lang *Language) getDependencies(bc *ButlerConfig) (err error) {
 	if lang.DepOptions.ExcludeStdLibs {
 		lang.StdLibDeps, _ = builtin.GetStdLibs(lang.Name)
@@ -189,10 +188,10 @@ func (lang *Language) createTasks(taskQueue *Queue, step BuildStep, command stri
 // Determines if the options set for a language in the config are valid.
 func (lang *Language) validateLanguage(bc *ButlerConfig) error {
 	if lang.Name == "" {
-		return errors.New("a language supplied in the config without a name. Please supply a language identifier for each language in the config")
+		return errors.New("a language was supplied in the config without a name. Please supply a language identifier for each language in the config")
 	}
-	if len(lang.FilePatterns) < 1 {
-		return fmt.Errorf("no file patterns supplied for '%s'. Please see the 'FilePatterns' options in the config spec for more information", lang.Name)
+	if len(lang.WorkspaceFiles) < 1 {
+		return fmt.Errorf("no file patterns supplied for '%s'. Please see the 'workspaceFiles' options in the language_options.md spec for more information", lang.Name)
 	}
 
 	lang.validateDependencySettings(bc)

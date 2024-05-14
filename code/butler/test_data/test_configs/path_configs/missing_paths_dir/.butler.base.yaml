@@ -15,7 +15,7 @@ tasks:
 
 languages:
   - name: "golang"
-    filePatterns: 
+    workspaceFiles: 
       - ".go"
     dependencyCommands:
       external: "go run ./user_commands/go_external_deps_method.go"

@@ -8,11 +8,11 @@ paths:
     - test_repo
   ignorePaths:
     - blocked_dir
-  workspaceRoot: "./test_data/test_configs/bad_ignore_configs"
+  workspaceRoot: "./test_data/test_configs/path_configs"
 
 languages:
   - name: "golang"
-    filePatterns: 
+    workspaceFiles: 
       - ".go"
     dependencyOptions:
       dependencyAnalysis: false

@@ -22,16 +22,14 @@ func Test_loadConfig(t *testing.T) {
 		expectedRoot := filepath.Join(wd, "./test_data")
 
 		expectedLanguage := &butler.Language{
-			Name:         "golang",
-			FilePatterns: []string{".go"},
+			Name:           "golang",
+			WorkspaceFiles: []string{".go"},
 			DepOptions: &butler.DependencyOptions{
 				DependencyAnalysis: true,
 				ExcludeStdLibs:     true,
 				ExternalDeps:       true,
 			},
-			DepCommands: &butler.DependencyCommands{
-				External: "go run ./test_repo/user_commands/go_external_deps_method.go",
-			},
+			DepCommands: &butler.DependencyCommands{},
 			TaskCmd: &butler.TaskCommands{
 				Lint:  "echo go lint command",
 				Test:  "echo go test command",

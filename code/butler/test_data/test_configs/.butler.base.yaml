@@ -20,14 +20,12 @@ tasks:
 
 languages:
   - name: "golang"
-    filePatterns: 
+    workspaceFiles: 
       - ".go"
     dependencyOptions:
       dependencyAnalysis: true
       excludeStdLibs: true
       externalDependencies: true
-    dependencyCommands:
-      external: "go run ./test_repo/user_commands/go_external_deps_method.go"
     taskCommands: 
       lint: "echo go lint command"
       test: "echo go test command"

@@ -26,7 +26,7 @@ const (
 
 var envBranchName = strings.TrimSpace(GetEnvOrDefault(envBranch, ""))
 
-// ButlerPaths specifies the allowed and ignored paths within the .butler.paths.yaml.
+// Specifies the allowed and ignored paths within the .butler.paths.yaml.
 type ButlerPaths struct {
 	AllowedPaths    []string `yaml:"allowedPaths,omitempty"`
 	IgnorePaths     []string `yaml:"ignorePaths,omitempty"`
@@ -35,8 +35,8 @@ type ButlerPaths struct {
 	ResultsFilePath string   `yaml:"resultsFilePath,omitempty"`
 }
 
-// TaskConfigurations specifies general options related to tasks. This includes enabling/disabling
-// specific build steps.
+// Specifies general options related to tasks. This includes enabling/disabling specific build
+// steps.
 type TaskConfigurations struct {
 	Coverage string `yaml:"coverage,omitempty"`
 	RunAll   bool   `yaml:"runAll,omitempty"`
@@ -46,7 +46,7 @@ type TaskConfigurations struct {
 	Publish  bool   `yaml:"publish,omitempty"`
 }
 
-// ButlerConfig specifies the Butler configuration options.
+// Specifies the Butler configuration options.
 type ButlerConfig struct {
 	PublishBranch string              `yaml:"publishBranch,omitempty"`
 	Paths         *ButlerPaths        `yaml:"paths,omitempty"`

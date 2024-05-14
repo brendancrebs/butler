@@ -43,11 +43,11 @@ set for every language defined under the `languages` tag.
 name: "golang"
 ```
 
-#### filePatterns
+#### workspaceFiles
 
 - Type: string array
 
-- Description: `filePatterns` is a field for the user to supply pattern strings associated with code files for a
+- Description: `workspaceFiles` is a field for the user to supply pattern strings associated with code files for a
   language. The file pattern could be a file extension, a common file name, a specific file path, or any combination of
   these. When a directory with a defined file pattern is found, Butler will create a `workspace` for this directory. A
   `workspace` is a directory that contains the relevant files for command execution.
@@ -60,26 +60,59 @@ name: "golang"
   is, AND the directory where the `.js` files are. For a case like this you would select just one of the patterns to
   avoid executing commands in directories they weren't intended to be run in.
 
+  By default, the files that belong to a `workspace` will be every file living in a child directory of the workspace. If
+  a child directory satisfies the conditions for a new workspace, it will be considered a distinct workspace and all
+  child directories of that workspace will be be associated with it instead of the original higher level workspace. If a
+  git diff is detected in a child directory of a workspace, the parent workspace directory will be marked as dirty. If
+  you wish to change this behavior, you can use the `filePatterns` option specified below to define specific files to
+  associate with a languages workspaces.
+
 - Config Examples:
 
 Example for Javascript:
 
 ```yaml
-filePatterns:
+workspaceFiles:
   - "package.json"
 ```
 
 Example for C:
 
 ```yaml
-filePatterns:
+workspaceFiles:
   - ".c"
   - ".h"
 ```
 
 - Scenarios:
 
-You may have a situation where you don't want the same command to run for every workspace.
+In this example, a config specifies this Golang file pattern for `workspaceFiles`:
+
+```yaml
+languages:
+  - name: "golang"
+    workspaceFiles:
+      - ".go"
+    taskCommands:
+      test: "go test"
+```
+
+Here is an example file structure containing code files for a Go project:
+
+```txt
+folder-A
+  - a.go
+  - folder-B
+    - b.go
+    - c.go
+  - folder-C
+    - main.ts
+```
+
+In this example, a `workspace` will be created for both `folder-A` and `folder-B` due to the `.go` pattern matching the
+`a.go`, `b.go` and `c.go` files. A workspace will not be created for `folder-C` since nothing within it matches a
+`workspacePattern` supplied in the config. Now, after the workspaces are determined, the `go test` command will be
+executed within the `folder-A` and `folder-B` if a git diff indicates they need to be built.
 
 ### Optional Language Settings
 
@@ -87,14 +120,28 @@ The remaining settings in this spec are not required for Butler to run. However,
 reads and understands them so they can properly utilize Butler as designed. In particular, the user should review the
 `Language Task Commands` section. Without defining any commands, Butler will not be able to do anything for a language.
 
-#### TODO: excludeFiles
+#### filePatterns
 
 - Type: string array
 
-- Description: `excludeFiles` is a field that is correlated with the `filePatterns` setting. This field is where you
-  would define a list of specific files or file patterns that you would want Butler to ignore when searching for
-  `workspaces`. The input format for the files is exactly the same as for `filePatterns`. An example use case for this
-  would be if you didn't want the standard testing command to be executed in a specific workspace.
+- Description: `filePatterns` is a field that is correlated with the `workspaceFiles` setting. For this option a user
+  also supplies file patterns that identify relevant files for a language `workspace`. The difference is that a
+  workspace will NOT be created if files are found that match the pattern. Instead, if these files are correlated with
+  an existing workspace and have a git diff, that workspace will be marked as dirty. A git diff on any file pattern
+  listed under `workspaceFiles` will also mark the workspace as dirty. The workspace to be marked dirty will be the
+  closest parent workspace directory for the given language.
+
+- Config Example:
+
+Example for Typescript:
+
+```yaml
+workspaceFiles:
+  - "package.json"
+filePatterns:
+  - ".ts"
+  - ".tsx"
+```
 
 ### Language Task Commands
 
@@ -351,7 +398,8 @@ dependencyCommands:
   `workspaceRoot` defined in the config. The next would be to supply the absolute path to the workspace. For clarity,
   paths to workspaces are represented as absolute paths within Butler.
 
-  External dependencies however will be represented in the specified format for that language.
+  External dependencies however will be represented in the specified format for that language. The list of dependency
+  string formats can be found in the [language_dependencies.md][1] spec.
 
 - Config Example:
 
@@ -373,3 +421,5 @@ dependencyCommands:
 dependencyCommands:
   external: "example command"
 ```
+
+[1]: ./language_dependencies.md

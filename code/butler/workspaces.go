@@ -22,7 +22,7 @@ type Workspace struct {
 // Collects workspaces for a language
 func (lang *Language) getWorkspaces(bc *ButlerConfig, paths []string) (err error) {
 	allDirs := make(map[string]bool)
-	for _, pattern := range lang.FilePatterns {
+	for _, pattern := range lang.WorkspaceFiles {
 		for k, v := range getMatchingDirs(paths, pattern) {
 			allDirs[k] = v
 		}

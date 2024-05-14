@@ -20,7 +20,7 @@ tasks:
 
 languages:
   - name: "golang"
-    filePatterns: 
+    workspaceFiles: 
       - ".go"
     dependencyOptions:
       dependencyAnalysis: true

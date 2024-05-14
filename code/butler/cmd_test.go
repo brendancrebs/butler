@@ -19,6 +19,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const testBranch = "butler_unit_test"
+
 var currBranch = func() string {
 	b, err := getCurrentBranch()
 	if err != nil {
@@ -47,6 +49,9 @@ func replaceStubs() (undo func()) {
 
 	originalWd, _ := os.Getwd()
 
+	originalEnvBranch := GetEnvOrDefault(envBranch, "")
+	os.Setenv(envBranch, testBranch)
+
 	return func() {
 		execOutputStub = originalExecOutputStub
 		execStartStub = originalExecStartStub
@@ -54,6 +59,7 @@ func replaceStubs() (undo func()) {
 		readStub = originalReadStub
 		_ = os.Chdir(originalWd)
 		_ = os.Remove(butlerResultsPath)
+		os.Setenv(envBranch, originalEnvBranch)
 	}
 }
 
@@ -358,7 +364,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--config", "./test_data/test_configs/invalid_language_1.yaml"})
 
 		Execute()
-		So(stderr.String(), ShouldContainSubstring, "Error: a language supplied in the config without a name. Please supply a language identifier for each language in the config")
+		So(stderr.String(), ShouldContainSubstring, "Error: a language was supplied in the config without a name. Please supply a language identifier for each language in the config")
 	})
 
 	Convey("Butler failed when no file pattern supplied", t, func() {
@@ -371,7 +377,7 @@ func Test_RunWithErr(t *testing.T) {
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--config", "./test_data/test_configs/invalid_language_2.yaml"})
 
 		Execute()
-		So(stderr.String(), ShouldContainSubstring, "Error: no file patterns supplied for 'invalid'. Please see the 'FilePatterns' options in the config spec for more information")
+		So(stderr.String(), ShouldContainSubstring, "Error: no file patterns supplied for 'invalid'. Please see the 'workspaceFiles' options in the language_options.md spec for more information")
 	})
 
 	Convey("Butler collects workspace dependencies when enabled", t, func() {
@@ -404,6 +410,24 @@ func Test_RunWithErr(t *testing.T) {
 		stderr := new(bytes.Buffer)
 		cmd.SetErr(stderr)
 		cmd.SetArgs([]string{"--publish-branch", currBranch, "--config", "./test_data/test_configs/no_allowed_paths.yaml"})
+		Execute()
+
+		_, err := os.Stat(butlerResultsPath)
+		So(err, ShouldBeNil)
+		So(stderr.String(), ShouldContainSubstring, "")
+	})
+
+	Convey("Butler should run all when language version changes", t, func() {
+		undo := replaceStubs()
+		defer undo()
+
+		cmd = getCommand()
+		stderr := new(bytes.Buffer)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"--config", "./test_data/test_configs/version_changed.yaml"})
+		execOutputStub = func(cmd *exec.Cmd) ([]byte, error) {
+			return nil, nil
+		}
 		Execute()
 
 		_, err := os.Stat(butlerResultsPath)

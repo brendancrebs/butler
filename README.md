@@ -13,10 +13,10 @@ the [butler_config.md][1] file in the spec directory.
 At a high level, Butler simply runs commands to lint, test, build, and publish parts of a repository. Here is the
 implementation steps to accomplish this:
 
-1. First, Butler will read from a user defined config called `.butler.base.yaml`. This will contain most of the information
-   that will influence Butler's behavior. Butler is also a cli tool, so the flags passed via the cli will be merged with
-   the config settings. The cli flags will take precedence over the config file settings. The location of this config
-   should be passed through the cli with the `-c, --config` flag.
+1. First, Butler will read from a user defined config called `.butler.base.yaml`. This will contain most of the
+   information that will influence Butler's behavior. Butler is also a cli tool, so the flags passed via the cli will be
+   merged with the config settings. The cli flags will take precedence over the config file settings. The location of
+   this config should be passed through the cli with the `-c, --config` flag.
 
 2. Next, paths for Butler to search can be defined in an file called `.butler.paths.yaml`. This file will be defined in
    whatever directory the `.butler.base.yaml` is stored. These paths can also be defined in the base config.
@@ -25,10 +25,10 @@ implementation steps to accomplish this:
    the paths the user has allowed and hasn't ignored in the config file.
 
 4. After an array of paths has been collected, Butler will determine units of code files to execute commands for. This
-   unit will be referred to as a `workspace`. Workspaces will be constructed based on the filepaths determined
-   previously. Workspaces will vary from language to language. For example, a golang workspace is simply a directory
-   that contains go files. On the other hand, a workspace may be identified by a single file. For example, a
-   package.json file can be used to identify node js/ts workspaces.
+   unit will be referred to as a `workspace`. Workspaces will be determined based on the filepaths gathered previously.
+   Workspaces will vary from language to language. For example, a golang workspace is simply a directory that contains
+   go files. On the other hand, a workspace may be identified by a single file. For example, a package.json file can be
+   used to identify node js/ts workspaces.
 
 5. After workspaces are collected, the dependencies for each workspace will be collected. This includes both internal
    packages and external third-party dependencies.

@@ -149,9 +149,9 @@ func Test_validateLanguage(t *testing.T) {
 		Task: &TaskConfigurations{},
 	}
 	tests := []template{
-		{"language config validation passes", &Language{Name: "test", FilePatterns: []string{".test"}}, nil},
-		{"fails when a name id is not provided", &Language{FilePatterns: []string{".test"}}, errors.New("a language supplied in the config without a name. Please supply a language identifier for each language in the config")},
-		{"fails when no file patterns are supplied", &Language{Name: "test"}, errors.New("no file patterns supplied for 'test'. Please see the 'FilePatterns' options in the config spec for more information")},
+		{"language config validation passes", &Language{Name: "test", WorkspaceFiles: []string{".test"}}, nil},
+		{"fails when a name id is not provided", &Language{WorkspaceFiles: []string{".test"}}, errors.New("a language was supplied in the config without a name. Please supply a language identifier for each language in the config")},
+		{"fails when no file patterns are supplied", &Language{Name: "test"}, errors.New("no file patterns supplied for 'test'. Please see the 'workspaceFiles' options in the language_options.md spec for more information")},
 	}
 
 	for _, test := range tests {
